@@ -1,0 +1,3 @@
+org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
+  org.badger.core.bootstrap.autoconfigure.ProviderConfig,\
+  org.badger.core.bootstrap.autoconfigure.EnhanceRpcProxyPostprocessor
