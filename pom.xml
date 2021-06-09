@@ -115,7 +115,6 @@
         <module>badger-client</module>
         <module>badger-common</module>
         <module>badger-example</module>
-        <module>init</module>
     </modules>
 
     <build>
