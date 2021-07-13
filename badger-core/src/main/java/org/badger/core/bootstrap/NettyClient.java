@@ -22,12 +22,16 @@ import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.timeout.IdleStateHandler;
 import lombok.extern.slf4j.Slf4j;
+import org.badger.core.bootstrap.entity.Peer;
 import org.badger.core.bootstrap.handler.JSONDecoder;
 import org.badger.core.bootstrap.handler.JSONEncoder;
 import org.badger.core.bootstrap.handler.NettyClientHandler;
 
 import javax.annotation.PreDestroy;
 import java.net.InetSocketAddress;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * @author liubin01
@@ -38,6 +42,8 @@ public class NettyClient {
     private final EventLoopGroup group;
     private final Bootstrap bootstrap;
     private Channel channel;
+
+    private static final Map<Peer, List<Channel>> peerChanelMap = new ConcurrentHashMap<>();
 
     public NettyClient() {
         boolean isEpoll = Epoll.isAvailable();

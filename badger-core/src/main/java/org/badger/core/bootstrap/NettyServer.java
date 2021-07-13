@@ -36,7 +36,6 @@ import org.badger.core.bootstrap.handler.JSONEncoder;
 import org.badger.core.bootstrap.handler.NettyServerHandler;
 
 import java.lang.reflect.Method;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -53,7 +52,6 @@ public class NettyServer {
     private final NettyServerConfig config;
 
     private final AtomicBoolean started = new AtomicBoolean();
-
 
     private Channel channel;
 

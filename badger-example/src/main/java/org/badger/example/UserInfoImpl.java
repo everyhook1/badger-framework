@@ -7,11 +7,7 @@
 package org.badger.example;
 
 import org.badger.core.bootstrap.entity.RpcProvider;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
-
-import java.util.Arrays;
-import java.util.stream.Stream;
 
 /**
  * @author liubin01

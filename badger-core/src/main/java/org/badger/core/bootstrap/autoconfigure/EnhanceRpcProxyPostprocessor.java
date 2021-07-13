@@ -53,7 +53,7 @@ public class EnhanceRpcProxyPostprocessor implements BeanFactoryPostProcessor, A
 
                 final AnnotationMetadata am = mdReader.getAnnotationMetadata();
                 if (!am.hasAnnotation(RpcProxy.class.getName())) {
-                    break;
+                    continue;
                 }
                 beanFactory.registerSingleton(am.getClassName(), enhance(am.getClassName(),
                         am.getAnnotationAttributes(RpcProxy.class.getName())));
@@ -67,38 +67,34 @@ public class EnhanceRpcProxyPostprocessor implements BeanFactoryPostProcessor, A
     private Object enhance(String className, Map<String, Object> annotationAttributes) throws ClassNotFoundException {
         final Class<?> clazz = Class.forName(className);
         return Proxy.newProxyInstance(clazz.getClassLoader(), new Class[]{clazz},
-                new InvocationHandler() {
+                (proxy, method, args) -> {
+                    RpcRequest request = new RpcRequest();
+                    request.setClzName(className);
+                    request.setMethod(method.getName());
+                    request.setQualifier((String) annotationAttributes.get("String"));
+                    request.setArgs(args);
+                    request.setArgTypes(method.getParameterTypes());
+                    request.setSeqId(SnowflakeIdWorker.getId());
 
-                    @Override
-                    public Object invoke(final Object proxy, final Method method, final Object[] args) throws Throwable {
-                        RpcRequest request = new RpcRequest();
-                        request.setClzName(className);
-                        request.setMethod(method.getName());
-                        request.setQualifier((String) annotationAttributes.get("String"));
-                        request.setArgs(args);
-                        request.setArgTypes(method.getParameterTypes());
-                        request.setSeqId(SnowflakeIdWorker.getId());
-
-//                        Object result = nettyClient.send(request);
-//                        Class<?> returnType = method.getReturnType();
+//                    Object result = nettyClient.send(request);
+//                    Class<?> returnType = method.getReturnType();
 //
-//                        Response response = JSON.parseObject(result.toString(), Response.class);
-//                        if (response.getCode() == 1) {
-//                            throw new Exception(response.getError_msg());
-//                        }
-//                        if (returnType.isPrimitive() || String.class.isAssignableFrom(returnType)) {
-//                            return response.getData();
-//                        } else if (Collection.class.isAssignableFrom(returnType)) {
-//                            return JSONArray.parseArray(response.getData().toString(), Object.class);
-//                        } else if (Map.class.isAssignableFrom(returnType)) {
-//                            return JSON.parseObject(response.getData().toString(), Map.class);
-//                        } else {
-//                            Object data = response.getData();
-//                            return JSONObject.parseObject(data.toString(), returnType);
-//                        }
+//                    Response response = JSON.parseObject(result.toString(), Response.class);
+//                    if (response.getCode() == 1) {
+//                        throw new Exception(response.getError_msg());
+//                    }
+//                    if (returnType.isPrimitive() || String.class.isAssignableFrom(returnType)) {
+//                        return response.getData();
+//                    } else if (Collection.class.isAssignableFrom(returnType)) {
+//                        return JSONArray.parseArray(response.getData().toString(), Object.class);
+//                    } else if (Map.class.isAssignableFrom(returnType)) {
+//                        return JSON.parseObject(response.getData().toString(), Map.class);
+//                    } else {
+//                        Object data = response.getData();
+//                        return JSONObject.parseObject(data.toString(), returnType);
+//                    }
 
-                        return null;
-                    }
+                    return null;
                 });
     }
 

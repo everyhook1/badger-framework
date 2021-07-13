@@ -9,8 +9,13 @@ package org.badger.core.bootstrap.autoconfigure;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
+import org.apache.curator.RetryPolicy;
+import org.apache.curator.framework.CuratorFramework;
+import org.apache.curator.framework.CuratorFrameworkFactory;
+import org.apache.curator.retry.RetryNTimes;
 import org.badger.core.bootstrap.NettyServer;
 import org.badger.core.bootstrap.confg.NettyServerConfig;
+import org.badger.core.bootstrap.confg.ZkConfig;
 import org.badger.core.bootstrap.entity.RpcProvider;
 import org.springframework.beans.BeansException;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
@@ -41,6 +46,26 @@ public class ProviderConfig implements ApplicationContextAware {
     @ConfigurationProperties(prefix = "rpc")
     public NettyServerConfig nettyServerConfig() {
         return new NettyServerConfig();
+    }
+
+
+    @Bean
+    @ConditionalOnMissingBean(ZkConfig.class)
+    @ConfigurationProperties(prefix = "zk")
+    public ZkConfig zkConfig() {
+        return new ZkConfig();
+    }
+
+    @Bean
+    @ConditionalOnBean(ZkConfig.class)
+    public CuratorFramework curatorFramework(ZkConfig zkConfig) {
+
+        RetryPolicy retryPolicy
+                = new RetryNTimes(zkConfig.getMaxRetries(), zkConfig.getSleepMsBetweenRetries());
+        CuratorFramework zkClient = CuratorFrameworkFactory.newClient(zkConfig.getAddress(), retryPolicy);
+        zkClient.start();
+
+        return zkClient;
     }
 
     @Bean

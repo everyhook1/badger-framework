@@ -8,16 +8,20 @@ package org.badger.core.bootstrap.entity;
 
 import lombok.Data;
 
+import java.util.Set;
+
 /**
  * @author liubin01
  */
 @Data
 public class Peer {
-    private String host;
-    private String port;
-    private String clzName;
-    private String qualifier;
-    private String method;
-    private Object[] args;
-    private Class<?>[] argTypes;
+
+    private String serviceName;
+    private Set<String> ends;
+
+    @Data
+    static class End {
+        private String ip;
+        private String port;
+    }
 }
