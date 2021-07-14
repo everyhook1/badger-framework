@@ -140,7 +140,7 @@ public class SnowflakeIdWorker {
     /**
      * 消息ID
      */
-    public static String getId() {
-        return String.valueOf(INSTANCE.nextId());
+    public static long getId() {
+        return INSTANCE.nextId();
     }
 }

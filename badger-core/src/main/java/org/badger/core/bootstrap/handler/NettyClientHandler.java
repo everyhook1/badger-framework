@@ -6,13 +6,18 @@
  */
 package org.badger.core.bootstrap.handler;
 
+import com.alibaba.fastjson.JSON;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.handler.timeout.IdleStateEvent;
 import lombok.extern.slf4j.Slf4j;
+import org.badger.core.bootstrap.entity.RpcResponse;
 
 import java.net.InetSocketAddress;
+import java.util.concurrent.SynchronousQueue;
+
+import static org.badger.core.bootstrap.NettyClient.REQ_MAP;
 
 /**
  * @author liubin01
@@ -32,6 +37,11 @@ public class NettyClientHandler extends ChannelInboundHandlerAdapter {
 
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
         log.info("channelRead {}", msg);
+        RpcResponse response = JSON.parseObject(msg.toString(), RpcResponse.class);
+        long requestId = response.getSeqId();
+        SynchronousQueue<Object> queue = REQ_MAP.get(requestId);
+        queue.put(response);
+        REQ_MAP.remove(requestId);
     }
 
     @Override

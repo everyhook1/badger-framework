@@ -6,12 +6,17 @@
  */
 package org.badger.core.bootstrap.autoconfigure;
 
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONArray;
+import com.alibaba.fastjson.JSONObject;
 import lombok.extern.slf4j.Slf4j;
 import org.badger.core.bootstrap.NettyClient;
 import org.badger.core.bootstrap.entity.RpcProxy;
 import org.badger.core.bootstrap.entity.RpcRequest;
+import org.badger.core.bootstrap.entity.RpcResponse;
 import org.badger.core.bootstrap.util.SnowflakeIdWorker;
 import org.springframework.beans.BeansException;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.BeanFactoryPostProcessor;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.context.ApplicationContext;
@@ -22,9 +27,8 @@ import org.springframework.core.type.classreading.MetadataReader;
 import org.springframework.core.type.classreading.SimpleMetadataReaderFactory;
 import org.springframework.stereotype.Component;
 
-import java.lang.reflect.InvocationHandler;
-import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
+import java.util.Collection;
 import java.util.Map;
 
 /**
@@ -36,7 +40,8 @@ public class EnhanceRpcProxyPostprocessor implements BeanFactoryPostProcessor, A
 
     private ApplicationContext applicationContext;
 
-    private static final NettyClient nettyClient = new NettyClient();
+    @Autowired
+    private NettyClient nettyClient;
 
     @Override
     public void postProcessBeanFactory(ConfigurableListableBeanFactory beanFactory) throws BeansException {
@@ -64,37 +69,36 @@ public class EnhanceRpcProxyPostprocessor implements BeanFactoryPostProcessor, A
         }
     }
 
-    private Object enhance(String className, Map<String, Object> annotationAttributes) throws ClassNotFoundException {
+    private Object enhance(String className, Map<String, Object> attrs) throws ClassNotFoundException {
         final Class<?> clazz = Class.forName(className);
         return Proxy.newProxyInstance(clazz.getClassLoader(), new Class[]{clazz},
                 (proxy, method, args) -> {
+                    log.info("enhance {} {} {} ", proxy, method, args);
                     RpcRequest request = new RpcRequest();
                     request.setClzName(className);
                     request.setMethod(method.getName());
-                    request.setQualifier((String) annotationAttributes.get("String"));
+                    request.setQualifier((String) attrs.get("qualifier"));
                     request.setArgs(args);
                     request.setArgTypes(method.getParameterTypes());
                     request.setSeqId(SnowflakeIdWorker.getId());
 
-//                    Object result = nettyClient.send(request);
-//                    Class<?> returnType = method.getReturnType();
-//
-//                    Response response = JSON.parseObject(result.toString(), Response.class);
-//                    if (response.getCode() == 1) {
-//                        throw new Exception(response.getError_msg());
-//                    }
-//                    if (returnType.isPrimitive() || String.class.isAssignableFrom(returnType)) {
-//                        return response.getData();
-//                    } else if (Collection.class.isAssignableFrom(returnType)) {
-//                        return JSONArray.parseArray(response.getData().toString(), Object.class);
-//                    } else if (Map.class.isAssignableFrom(returnType)) {
-//                        return JSON.parseObject(response.getData().toString(), Map.class);
-//                    } else {
-//                        Object data = response.getData();
-//                        return JSONObject.parseObject(data.toString(), returnType);
-//                    }
+                    Object result = nettyClient.send(request);
+                    Class<?> returnType = method.getReturnType();
 
-                    return null;
+                    RpcResponse response = JSON.parseObject(result.toString(), RpcResponse.class);
+                    if (response.getCode() == 1) {
+                        throw new Exception(response.getErrMsg());
+                    }
+                    if (returnType.isPrimitive() || String.class.isAssignableFrom(returnType)) {
+                        return response.getBody();
+                    } else if (Collection.class.isAssignableFrom(returnType)) {
+                        return JSONArray.parseArray(response.getBody().toString(), Object.class);
+                    } else if (Map.class.isAssignableFrom(returnType)) {
+                        return JSON.parseObject(response.getBody().toString(), Map.class);
+                    } else {
+                        Object data = response.getBody();
+                        return JSONObject.parseObject(data.toString(), returnType);
+                    }
                 });
     }
 

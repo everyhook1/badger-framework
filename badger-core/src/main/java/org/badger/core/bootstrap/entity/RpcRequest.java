@@ -13,7 +13,8 @@ import lombok.Data;
  */
 @Data
 public class RpcRequest {
-    private String seqId;
+    private long seqId;
+    private Peer peer;
     private String clzName;
     private String qualifier;
     private String method;

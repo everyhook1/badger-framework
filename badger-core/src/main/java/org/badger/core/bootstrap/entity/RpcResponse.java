@@ -13,7 +13,7 @@ import lombok.Data;
  */
 @Data
 public class RpcResponse {
-    private String seqId;
+    private long seqId;
     private int code;
     private String errMsg;
     private Object body;

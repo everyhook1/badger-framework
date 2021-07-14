@@ -23,6 +23,7 @@ import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.timeout.IdleStateHandler;
 import lombok.extern.slf4j.Slf4j;
 import org.badger.core.bootstrap.entity.Peer;
+import org.badger.core.bootstrap.entity.RpcRequest;
 import org.badger.core.bootstrap.handler.JSONDecoder;
 import org.badger.core.bootstrap.handler.JSONEncoder;
 import org.badger.core.bootstrap.handler.NettyClientHandler;
@@ -32,6 +33,7 @@ import java.net.InetSocketAddress;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.SynchronousQueue;
 
 /**
  * @author liubin01
@@ -44,6 +46,7 @@ public class NettyClient {
     private Channel channel;
 
     private static final Map<Peer, List<Channel>> peerChanelMap = new ConcurrentHashMap<>();
+    public static final Map<Long, SynchronousQueue<Object>> REQ_MAP = new ConcurrentHashMap<>();
 
     public NettyClient() {
         boolean isEpoll = Epoll.isAvailable();
@@ -74,8 +77,17 @@ public class NettyClient {
         closeChannel();
     }
 
-    public void send(Object request) {
+    public Object send(RpcRequest request) throws InterruptedException {
+        List<Channel> channels = peerChanelMap.get(request.getPeer());
+        if (channels == null || channels.size() == 0) {
+            log.error("{} channel is null", request.getPeer());
+            return null;
+        }
+        Channel channel = channels.get((int) (request.getSeqId() % channels.size()));
+        SynchronousQueue<Object> queue = new SynchronousQueue<>();
+        REQ_MAP.put(request.getSeqId(), queue);
         channel.writeAndFlush(request);
+        return queue.take();
     }
 
     public void connect(String host, int port) {

@@ -13,6 +13,7 @@ import org.apache.curator.RetryPolicy;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
 import org.apache.curator.retry.RetryNTimes;
+import org.badger.core.bootstrap.NettyClient;
 import org.badger.core.bootstrap.NettyServer;
 import org.badger.core.bootstrap.confg.NettyServerConfig;
 import org.badger.core.bootstrap.confg.ZkConfig;
@@ -67,6 +68,14 @@ public class ProviderConfig implements ApplicationContextAware {
 
         return zkClient;
     }
+
+    @Bean
+    @ConditionalOnBean(CuratorFramework.class)
+    public NettyClient nettyClient(CuratorFramework client) {
+        NettyClient nettyClient = new NettyClient();
+        return nettyClient;
+    }
+
 
     @Bean
     @ConditionalOnBean(NettyServerConfig.class)

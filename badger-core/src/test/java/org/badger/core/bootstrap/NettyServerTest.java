@@ -14,7 +14,7 @@ public class NettyServerTest {
         NettyClient nettyClient = new NettyClient();
         nettyClient.connect("127.0.0.1", DEFAULT_PORT);
         RpcRequest rpcRequest = new RpcRequest();
-        rpcRequest.setSeqId("123123");
+        rpcRequest.setSeqId(1111L);
         rpcRequest.setClzName("userInfoImpl");
         Class<?>[] argTypes = {String.class};
         rpcRequest.setArgTypes(argTypes);
