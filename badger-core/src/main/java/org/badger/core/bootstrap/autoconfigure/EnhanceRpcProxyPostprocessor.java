@@ -10,6 +10,7 @@ import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.curator.framework.CuratorFramework;
 import org.badger.core.bootstrap.NettyClient;
 import org.badger.core.bootstrap.entity.RpcProxy;
 import org.badger.core.bootstrap.entity.RpcRequest;
@@ -29,7 +30,9 @@ import org.springframework.stereotype.Component;
 
 import java.lang.reflect.Proxy;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * @author liubin01
@@ -43,6 +46,9 @@ public class EnhanceRpcProxyPostprocessor implements BeanFactoryPostProcessor, A
     @Autowired
     private NettyClient nettyClient;
 
+    @Autowired
+    private CuratorFramework client;
+
     @Override
     public void postProcessBeanFactory(ConfigurableListableBeanFactory beanFactory) throws BeansException {
         try {
@@ -53,6 +59,7 @@ public class EnhanceRpcProxyPostprocessor implements BeanFactoryPostProcessor, A
             final SimpleMetadataReaderFactory factory = new
                     SimpleMetadataReaderFactory(applicationContext);
 
+            Set<String> serviceNameSet = new HashSet<>();
             for (final Resource resource : resources) {
                 final MetadataReader mdReader = factory.getMetadataReader(resource);
 
@@ -60,10 +67,14 @@ public class EnhanceRpcProxyPostprocessor implements BeanFactoryPostProcessor, A
                 if (!am.hasAnnotation(RpcProxy.class.getName())) {
                     continue;
                 }
-                beanFactory.registerSingleton(am.getClassName(), enhance(am.getClassName(),
-                        am.getAnnotationAttributes(RpcProxy.class.getName())));
+                Map<String, Object> attrs = am.getAnnotationAttributes(RpcProxy.class.getName());
+                if (attrs.containsKey("serviceName")) {
+                    serviceNameSet.add((String) attrs.get("serviceName"));
+                }
+                beanFactory.registerSingleton(am.getClassName(), enhance(am.getClassName(), attrs));
 
             }
+
         } catch (final Exception e) {
             throw new RuntimeException(e);
         }

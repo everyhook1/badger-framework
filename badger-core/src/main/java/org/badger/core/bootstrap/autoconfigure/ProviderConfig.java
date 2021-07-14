@@ -13,6 +13,7 @@ import org.apache.curator.RetryPolicy;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
 import org.apache.curator.retry.RetryNTimes;
+import org.apache.zookeeper.CreateMode;
 import org.badger.core.bootstrap.NettyClient;
 import org.badger.core.bootstrap.NettyServer;
 import org.badger.core.bootstrap.confg.NettyServerConfig;
@@ -27,6 +28,10 @@ import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.annotation.Bean;
 import org.springframework.stereotype.Component;
 
+import java.net.Inet4Address;
+import java.net.InetAddress;
+import java.net.NetworkInterface;
+import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -70,16 +75,14 @@ public class ProviderConfig implements ApplicationContextAware {
     }
 
     @Bean
-    @ConditionalOnBean(CuratorFramework.class)
-    public NettyClient nettyClient(CuratorFramework client) {
-        NettyClient nettyClient = new NettyClient();
-        return nettyClient;
+    public NettyClient nettyClient() {
+        return new NettyClient();
     }
 
 
     @Bean
-    @ConditionalOnBean(NettyServerConfig.class)
-    public NettyServer nettyServer(NettyServerConfig nettyServerConfig) throws Throwable {
+    @ConditionalOnBean(value = {NettyServerConfig.class, CuratorFramework.class})
+    public NettyServer nettyServer(NettyServerConfig nettyServerConfig, CuratorFramework client) throws Throwable {
         Map<String, Object> objectMap = applicationContext.getBeansWithAnnotation(RpcProvider.class);
         Map<String, Object> serviceMap = new HashMap<>();
         Map<Pair<String, String>, Object> servicePairMap = new HashMap<>();
@@ -94,6 +97,7 @@ public class ProviderConfig implements ApplicationContextAware {
         });
         NettyServer nettyServer = new NettyServer(nettyServerConfig, serviceMap, servicePairMap);
         nettyServer.start();
+        client.create().creatingParentsIfNeeded().withMode(CreateMode.EPHEMERAL).forPath(String.format("/%s/%s", nettyServerConfig.getServiceName(), getIpAddress()));
         return nettyServer;
     }
 
@@ -101,4 +105,27 @@ public class ProviderConfig implements ApplicationContextAware {
     public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
         this.applicationContext = applicationContext;
     }
+
+    public static String getIpAddress() {
+        try {
+            Enumeration<NetworkInterface> allNetInterfaces = NetworkInterface.getNetworkInterfaces();
+            InetAddress ip;
+            while (allNetInterfaces.hasMoreElements()) {
+                NetworkInterface netInterface = allNetInterfaces.nextElement();
+                if (!netInterface.isLoopback() && !netInterface.isVirtual() && netInterface.isUp()) {
+                    Enumeration<InetAddress> addresses = netInterface.getInetAddresses();
+                    while (addresses.hasMoreElements()) {
+                        ip = addresses.nextElement();
+                        if (ip instanceof Inet4Address) {
+                            return ip.getHostAddress();
+                        }
+                    }
+                }
+            }
+        } catch (Exception e) {
+            System.err.println("IP地址获取失败" + e.toString());
+        }
+        return "";
+    }
+
 }
