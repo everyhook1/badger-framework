@@ -18,8 +18,8 @@ import io.netty.handler.timeout.IdleStateHandler;
 import lombok.extern.slf4j.Slf4j;
 import org.badger.core.bootstrap.entity.Peer;
 import org.badger.core.bootstrap.entity.RpcRequest;
-import org.badger.core.bootstrap.handler.JSONDecoder;
-import org.badger.core.bootstrap.handler.JSONEncoder;
+import org.badger.core.bootstrap.handler.KryoNettyDecoder;
+import org.badger.core.bootstrap.handler.KryoNettyEncoder;
 import org.badger.core.bootstrap.handler.NettyClientHandler;
 
 import javax.annotation.PreDestroy;
@@ -67,8 +67,8 @@ public class NettyClient {
                     protected void initChannel(SocketChannel ch) {
                         ChannelPipeline pipeline = ch.pipeline();
                         pipeline.addLast(new IdleStateHandler(0, 0, 30));
-                        pipeline.addLast(new JSONEncoder());
-                        pipeline.addLast(new JSONDecoder());
+                        pipeline.addLast("decoder", new KryoNettyDecoder());
+                        pipeline.addLast("encoder", new KryoNettyEncoder());
                         pipeline.addLast("handler", new NettyClientHandler());
                     }
                 });

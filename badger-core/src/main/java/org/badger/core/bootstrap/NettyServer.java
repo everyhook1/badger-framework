@@ -24,8 +24,8 @@ import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.badger.core.bootstrap.confg.NettyServerConfig;
 import org.badger.core.bootstrap.entity.RpcRequest;
-import org.badger.core.bootstrap.handler.JSONDecoder;
-import org.badger.core.bootstrap.handler.JSONEncoder;
+import org.badger.core.bootstrap.handler.KryoNettyDecoder;
+import org.badger.core.bootstrap.handler.KryoNettyEncoder;
 import org.badger.core.bootstrap.handler.NettyServerHandler;
 
 import javax.annotation.PreDestroy;
@@ -114,8 +114,8 @@ public class NettyServer {
                     protected void initChannel(SocketChannel ch) {
                         ChannelPipeline pipeline = ch.pipeline();
                         pipeline.addLast(new IdleStateHandler(0, 0, 60));
-                        pipeline.addLast(new JSONEncoder());
-                        pipeline.addLast(new JSONDecoder());
+                        pipeline.addLast("decoder", new KryoNettyDecoder());
+                        pipeline.addLast("encoder", new KryoNettyEncoder());
                         pipeline.addLast("dispatch", new NettyServerHandler(NettyServer.this));
                     }
                 });

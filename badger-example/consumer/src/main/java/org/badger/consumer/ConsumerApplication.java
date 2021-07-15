@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * @author liubin01
@@ -39,7 +40,7 @@ public class ConsumerApplication {
     }
 
     @GetMapping(value = "getMap")
-    public Object getMap(@RequestParam("ids") List<Integer> ids) {
+    public Map<Integer, String> getMap(@RequestParam("ids") List<Integer> ids) {
         return userInfo.getMap(ids);
     }
 }

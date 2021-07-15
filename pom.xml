@@ -24,6 +24,7 @@
         <fastjson.version>1.2.76</fastjson.version>
         <spring.version>5.2.14.RELEASE</spring.version>
         <spring-boot.version>2.5.0</spring-boot.version>
+        <kryo.version>5.0.4</kryo.version>
     </properties>
 
     <dependencyManagement>

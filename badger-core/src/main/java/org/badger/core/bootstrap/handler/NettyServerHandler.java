@@ -1,6 +1,5 @@
 package org.badger.core.bootstrap.handler;
 
-import com.alibaba.fastjson.JSON;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
@@ -24,7 +23,7 @@ public class NettyServerHandler extends SimpleChannelInboundHandler<Object> {
 
     @Override
     public void channelRead0(ChannelHandlerContext ctx, Object s) {
-        RpcRequest rpcRequest = JSON.toJavaObject((JSON) s, RpcRequest.class);
+        RpcRequest rpcRequest = (RpcRequest) s;
         RpcResponse response = new RpcResponse();
         response.setSeqId(rpcRequest.getSeqId());
         try {

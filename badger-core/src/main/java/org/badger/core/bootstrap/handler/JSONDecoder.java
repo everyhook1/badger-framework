@@ -16,9 +16,13 @@ public class JSONDecoder extends LengthFieldBasedFrameDecoder {
         if (decode == null) {
             return null;
         }
-        int data_len = decode.readableBytes();
-        byte[] bytes = new byte[data_len];
-        decode.readBytes(bytes);
-        return JSON.parse(bytes);
+        try {
+            int data_len = decode.readableBytes();
+            byte[] bytes = new byte[data_len];
+            decode.readBytes(bytes);
+            return JSON.parse(bytes);
+        } finally {
+            decode.release();
+        }
     }
 }
