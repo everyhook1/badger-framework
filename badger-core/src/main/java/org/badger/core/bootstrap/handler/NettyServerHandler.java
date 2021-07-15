@@ -32,8 +32,8 @@ public class NettyServerHandler extends SimpleChannelInboundHandler<Object> {
             response.setBody(nettyServer.dispatch(rpcRequest));
         } catch (Exception e) {
             log.error("channelRead0 {} process error", rpcRequest, e);
-            response.setBody(null);
             response.setCode(500);
+            response.setErrMsg("process error");
         }
         ctx.writeAndFlush(response);
     }

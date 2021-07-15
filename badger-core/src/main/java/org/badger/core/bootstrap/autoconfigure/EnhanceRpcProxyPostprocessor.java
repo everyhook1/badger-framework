@@ -1,8 +1,5 @@
 package org.badger.core.bootstrap.autoconfigure;
 
-import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.JSONArray;
-import com.alibaba.fastjson.JSONObject;
 import lombok.extern.slf4j.Slf4j;
 import org.badger.core.bootstrap.NettyClient;
 import org.badger.core.bootstrap.entity.RpcProxy;
@@ -22,7 +19,6 @@ import org.springframework.stereotype.Component;
 
 import java.lang.reflect.Proxy;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -86,23 +82,11 @@ public class EnhanceRpcProxyPostprocessor implements BeanFactoryPostProcessor, A
                     request.setArgTypes(method.getParameterTypes());
                     request.setSeqId(SnowflakeIdWorker.getId());
 
-                    Object result = nettyClient.send(request);
-                    Class<?> returnType = method.getReturnType();
-
-                    RpcResponse response = (RpcResponse) result;
-                    if (response.getCode() == 1) {
+                    RpcResponse response = (RpcResponse) nettyClient.send(request);
+                    if (response.getCode() == 500) {
                         throw new Exception(response.getErrMsg());
                     }
-                    if (returnType.isPrimitive() || String.class.isAssignableFrom(returnType)) {
-                        return response.getBody();
-                    } else if (Collection.class.isAssignableFrom(returnType)) {
-                        return JSONArray.parseArray(response.getBody().toString(), Object.class);
-                    } else if (Map.class.isAssignableFrom(returnType)) {
-                        return JSON.parseObject(response.getBody().toString(), Map.class);
-                    } else {
-                        Object data = response.getBody();
-                        return JSONObject.parseObject(data.toString(), returnType);
-                    }
+                    return response.getBody();
                 });
     }
 

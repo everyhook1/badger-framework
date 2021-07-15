@@ -4,7 +4,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.util.List;
 
 /**
  * @author liubin01
@@ -20,8 +23,23 @@ public class ConsumerApplication {
         SpringApplication.run(ConsumerApplication.class, args);
     }
 
-    @GetMapping
-    public String echo(String name) {
-        return userInfo.echo(name);
+    @GetMapping(value = "echo")
+    public String echo(String str) {
+        return userInfo.echo(str);
+    }
+
+    @GetMapping(value = "sum")
+    public int sum(int a, int b) {
+        return userInfo.sum(a, b);
+    }
+
+    @GetMapping(value = "getStrings")
+    public List<String> getStrings(String str) {
+        return userInfo.getStrings(str);
+    }
+
+    @GetMapping(value = "getMap")
+    public Object getMap(@RequestParam("ids") List<Integer> ids) {
+        return userInfo.getMap(ids);
     }
 }
