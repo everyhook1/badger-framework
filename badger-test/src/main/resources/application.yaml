@@ -1,0 +1,5 @@
+server:
+  port: 8081
+
+zk:
+  address: 127.0.0.1:2181

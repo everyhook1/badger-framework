@@ -1,9 +1,3 @@
-/**
- * @(#)NettyClient.java, 6月 07, 2021.
- * <p>
- * Copyright 2021 fenbi.com. All rights reserved.
- * FENBI.COM PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
- */
 package org.badger.core.bootstrap;
 
 import io.netty.bootstrap.Bootstrap;
@@ -29,9 +23,9 @@ import org.badger.core.bootstrap.handler.JSONEncoder;
 import org.badger.core.bootstrap.handler.NettyClientHandler;
 
 import javax.annotation.PreDestroy;
-import java.net.InetSocketAddress;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.SynchronousQueue;
 
@@ -41,12 +35,24 @@ import java.util.concurrent.SynchronousQueue;
 @Slf4j
 public class NettyClient {
 
+    private static NettyClient INSTANCE;
+
+    public static NettyClient getInstance() {
+        if (INSTANCE == null) {
+            synchronized (NettyClient.class) {
+                if (INSTANCE == null) {
+                    INSTANCE = new NettyClient();
+                }
+            }
+        }
+        return INSTANCE;
+    }
+
     private final EventLoopGroup group;
     private final Bootstrap bootstrap;
-    private Channel channel;
-
-    private static final Map<Peer, List<Channel>> peerChanelMap = new ConcurrentHashMap<>();
     public static final Map<Long, SynchronousQueue<Object>> REQ_MAP = new ConcurrentHashMap<>();
+    private static final Map<String, Peer> peerMap = new ConcurrentHashMap<>();
+    private Set<String> serviceNameSet;
 
     public NettyClient() {
         boolean isEpoll = Epoll.isAvailable();
@@ -74,46 +80,52 @@ public class NettyClient {
     @PreDestroy
     public void destroy() {
         group.shutdownGracefully();
-        closeChannel();
+        peerMap.forEach((k, v) -> v.destroy());
     }
 
     public Object send(RpcRequest request) throws InterruptedException {
-        List<Channel> channels = peerChanelMap.get(request.getPeer());
-        if (channels == null || channels.size() == 0) {
-            log.error("{} channel is null", request.getPeer());
+        Peer peer;
+        if (peerMap.containsKey(request.getServiceName())) {
+            peer = peerMap.get(request.getServiceName());
+        } else {
+            throw new RuntimeException("peer not exist " + request);
+        }
+        List<Peer.End> ends = peer.getEnds();
+        if (ends == null || ends.size() == 0) {
+            log.error("{} channel is null", request);
             return null;
         }
-        Channel channel = channels.get((int) (request.getSeqId() % channels.size()));
+        Channel channel = ends.get((int) (request.getSeqId() % ends.size())).getChannel();
         SynchronousQueue<Object> queue = new SynchronousQueue<>();
         REQ_MAP.put(request.getSeqId(), queue);
         channel.writeAndFlush(request);
         return queue.take();
     }
 
-    public void connect(String host, int port) {
-        // Close the Channel if it's already connected
-        if (!isConnected()) {
-            closeChannel();
-        }
-        // Start the client and wait for the connection to be established.
-        try {
-            this.channel = this.bootstrap.connect(new InetSocketAddress(host, port)).sync().channel();
-        } catch (InterruptedException e) {
-            log.error("connect ", e);
-        }
+    public void setServiceNameSet(Set<String> serviceNameSet) {
+        this.serviceNameSet = serviceNameSet;
     }
 
-    public void closeChannel() {
-        if (isConnected()) {
-            try {
-                channel.close().sync();
-            } catch (InterruptedException e) {
-                log.error("closeChannel ", e);
-            }
-        }
+    public Set<String> getServiceNameSet() {
+        return serviceNameSet;
     }
 
-    public boolean isConnected() {
-        return this.channel != null && this.channel.isOpen() && this.channel.isActive();
+    public void connectChannel(String serviceName, String host, int port) {
+        Peer peer;
+        if (peerMap.containsKey(serviceName)) {
+            peer = peerMap.get(serviceName);
+        } else {
+            peer = new Peer(serviceName, bootstrap);
+            peerMap.put(serviceName, peer);
+        }
+        peer.addEnd(host, port);
+    }
+
+    public void removeChannel(String serviceName, String host, int port) {
+        Peer peer;
+        if (peerMap.containsKey(serviceName)) {
+            peer = peerMap.get(serviceName);
+            peer.removeEnd(host, port);
+        }
     }
 }

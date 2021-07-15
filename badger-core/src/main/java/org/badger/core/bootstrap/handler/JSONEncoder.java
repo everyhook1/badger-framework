@@ -8,15 +8,9 @@ import io.netty.handler.codec.MessageToMessageEncoder;
 
 import java.util.List;
 
-/**
- * @program: rpc-provider
- * @description: ${description}
- * @author: shiqizhen
- * @create: 2018-12-07 09:56
- **/
 public class JSONEncoder extends MessageToMessageEncoder {
     @Override
-    protected void encode(ChannelHandlerContext channelHandlerContext, Object msg, List out){
+    protected void encode(ChannelHandlerContext channelHandlerContext, Object msg, List out) {
         ByteBuf byteBuf = ByteBufAllocator.DEFAULT.ioBuffer();
         byte[] bytes = JSON.toJSONBytes(msg);
         byteBuf.writeInt(bytes.length);

@@ -1,9 +1,3 @@
-/**
- * @(#)ProviderConfig.java, 6月 09, 2021.
- * <p>
- * Copyright 2021 fenbi.com. All rights reserved.
- * FENBI.COM PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
- */
 package org.badger.core.bootstrap.autoconfigure;
 
 import lombok.extern.slf4j.Slf4j;
@@ -12,6 +6,8 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.apache.curator.RetryPolicy;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
+import org.apache.curator.framework.recipes.cache.CuratorCache;
+import org.apache.curator.framework.recipes.cache.CuratorCacheListener;
 import org.apache.curator.retry.RetryNTimes;
 import org.apache.zookeeper.CreateMode;
 import org.badger.core.bootstrap.NettyClient;
@@ -19,36 +15,33 @@ import org.badger.core.bootstrap.NettyServer;
 import org.badger.core.bootstrap.confg.NettyServerConfig;
 import org.badger.core.bootstrap.confg.ZkConfig;
 import org.badger.core.bootstrap.entity.RpcProvider;
+import org.badger.core.bootstrap.util.IpUtil;
 import org.springframework.beans.BeansException;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.annotation.Bean;
-import org.springframework.stereotype.Component;
+import org.springframework.context.annotation.Configuration;
 
-import java.net.Inet4Address;
-import java.net.InetAddress;
-import java.net.NetworkInterface;
-import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * @author liubin01
  */
 
 @Slf4j
-@Component
+@Configuration
 public class ProviderConfig implements ApplicationContextAware {
 
     private ApplicationContext applicationContext;
 
-    private static final Map<String, Object> rpcMap = new HashMap<>();
-
     @Bean
-    @ConditionalOnMissingBean(NettyServerConfig.class)
+    @ConditionalOnProperty(value = "rpc.serviceName")
     @ConfigurationProperties(prefix = "rpc")
     public NettyServerConfig nettyServerConfig() {
         return new NettyServerConfig();
@@ -65,20 +58,49 @@ public class ProviderConfig implements ApplicationContextAware {
     @Bean
     @ConditionalOnBean(ZkConfig.class)
     public CuratorFramework curatorFramework(ZkConfig zkConfig) {
-
         RetryPolicy retryPolicy
                 = new RetryNTimes(zkConfig.getMaxRetries(), zkConfig.getSleepMsBetweenRetries());
         CuratorFramework zkClient = CuratorFrameworkFactory.newClient(zkConfig.getAddress(), retryPolicy);
         zkClient.start();
-
         return zkClient;
     }
 
     @Bean
-    public NettyClient nettyClient() {
-        return new NettyClient();
+    @ConditionalOnBean(CuratorFramework.class)
+    public NettyClient nettyClient(CuratorFramework client) {
+        NettyClient nettyClient = NettyClient.getInstance();
+        Set<String> serviceNameSet = nettyClient.getServiceNameSet();
+        for (String serviceName : serviceNameSet) {
+            CuratorCache cache = CuratorCache.builder(client, "/" + serviceName).build();
+            CuratorCacheListener listener = CuratorCacheListener
+                    .builder()
+                    .forPathChildrenCache("/" + serviceName, client, (clt, event) -> {
+                        log.info("childEvent {} {}", serviceName, event);
+                        String[] splits;
+                        String host = "";
+                        int port = 0;
+                        if (event.getData() != null && event.getData().getPath() != null) {
+                            splits = event.getData().getPath().split("[/:]");
+                            host = splits[2];
+                            port = Integer.parseInt(splits[3]);
+                        }
+                        switch (event.getType()) {
+                            case CHILD_ADDED:
+                                nettyClient.connectChannel(serviceName, host, port);
+                                break;
+                            case CHILD_REMOVED:
+                                nettyClient.removeChannel(serviceName, host, port);
+                                break;
+                            default:
+                                break;
+                        }
+                    })
+                    .build();
+            cache.listenable().addListener(listener);
+            cache.start();
+        }
+        return nettyClient;
     }
-
 
     @Bean
     @ConditionalOnBean(value = {NettyServerConfig.class, CuratorFramework.class})
@@ -90,42 +112,21 @@ public class ProviderConfig implements ApplicationContextAware {
             Class<?> clazz = v.getClass();
             Class<?>[] interfaces = clazz.getInterfaces();
             for (Class<?> inter : interfaces) {
-                String interfaceName = inter.getName();
+                String interfaceName = inter.getSimpleName();
                 serviceMap.put(interfaceName, v);
                 servicePairMap.put(ImmutablePair.of(interfaceName, k), v);
             }
         });
         NettyServer nettyServer = new NettyServer(nettyServerConfig, serviceMap, servicePairMap);
         nettyServer.start();
-        client.create().creatingParentsIfNeeded().withMode(CreateMode.EPHEMERAL).forPath(String.format("/%s/%s", nettyServerConfig.getServiceName(), getIpAddress()));
+        client.create().creatingParentsIfNeeded().withMode(CreateMode.EPHEMERAL)
+                .forPath(String.format("/%s/%s:%s", nettyServerConfig.getServiceName(), IpUtil.getIpAddress(), nettyServerConfig.getPort()));
         return nettyServer;
     }
 
     @Override
     public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
         this.applicationContext = applicationContext;
-    }
-
-    public static String getIpAddress() {
-        try {
-            Enumeration<NetworkInterface> allNetInterfaces = NetworkInterface.getNetworkInterfaces();
-            InetAddress ip;
-            while (allNetInterfaces.hasMoreElements()) {
-                NetworkInterface netInterface = allNetInterfaces.nextElement();
-                if (!netInterface.isLoopback() && !netInterface.isVirtual() && netInterface.isUp()) {
-                    Enumeration<InetAddress> addresses = netInterface.getInetAddresses();
-                    while (addresses.hasMoreElements()) {
-                        ip = addresses.nextElement();
-                        if (ip instanceof Inet4Address) {
-                            return ip.getHostAddress();
-                        }
-                    }
-                }
-            }
-        } catch (Exception e) {
-            System.err.println("IP地址获取失败" + e.toString());
-        }
-        return "";
     }
 
 }

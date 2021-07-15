@@ -1,12 +1,5 @@
-/**
- * @(#)NettyServer.java, 6月 04, 2021.
- * <p>
- * Copyright 2021 fenbi.com. All rights reserved.
- * FENBI.COM PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
- */
 package org.badger.core.bootstrap;
 
-import com.alibaba.fastjson.JSON;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.channel.Channel;
@@ -35,6 +28,7 @@ import org.badger.core.bootstrap.handler.JSONDecoder;
 import org.badger.core.bootstrap.handler.JSONEncoder;
 import org.badger.core.bootstrap.handler.NettyServerHandler;
 
+import javax.annotation.PreDestroy;
 import java.lang.reflect.Method;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -85,18 +79,6 @@ public class NettyServer {
             return method.invoke(serviceBean, parameters);
         } else {
             throw new Exception("未找到服务接口,请检查配置!:" + className + "#" + request.getMethod());
-        }
-    }
-
-    private Object[] getParameters(Class<?>[] parameterTypes, Object[] parameters) {
-        if (parameters == null || parameters.length == 0) {
-            return parameters;
-        } else {
-            Object[] new_parameters = new Object[parameters.length];
-            for (int i = 0; i < parameters.length; i++) {
-                new_parameters[i] = JSON.parseObject(parameters[i].toString(), parameterTypes[i]);
-            }
-            return new_parameters;
         }
     }
 
@@ -152,14 +134,7 @@ public class NettyServer {
         }
     }
 
-
-    public void register() {
-
-    }
-
-    /**
-     * close server
-     */
+    @PreDestroy
     public void stop() {
         log.info("netty-server stopped.");
         if (boss != null) {

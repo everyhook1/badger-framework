@@ -1,23 +1,15 @@
-/**
- * @(#)DoSomethingPostprocessor.java, 6月 09, 2021.
- * <p>
- * Copyright 2021 fenbi.com. All rights reserved.
- * FENBI.COM PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
- */
 package org.badger.core.bootstrap.autoconfigure;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.curator.framework.CuratorFramework;
 import org.badger.core.bootstrap.NettyClient;
 import org.badger.core.bootstrap.entity.RpcProxy;
 import org.badger.core.bootstrap.entity.RpcRequest;
 import org.badger.core.bootstrap.entity.RpcResponse;
 import org.badger.core.bootstrap.util.SnowflakeIdWorker;
 import org.springframework.beans.BeansException;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.BeanFactoryPostProcessor;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.context.ApplicationContext;
@@ -29,6 +21,7 @@ import org.springframework.core.type.classreading.SimpleMetadataReaderFactory;
 import org.springframework.stereotype.Component;
 
 import java.lang.reflect.Proxy;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Map;
@@ -43,11 +36,7 @@ public class EnhanceRpcProxyPostprocessor implements BeanFactoryPostProcessor, A
 
     private ApplicationContext applicationContext;
 
-    @Autowired
-    private NettyClient nettyClient;
-
-    @Autowired
-    private CuratorFramework client;
+    public static final NettyClient nettyClient = NettyClient.getInstance();
 
     @Override
     public void postProcessBeanFactory(ConfigurableListableBeanFactory beanFactory) throws BeansException {
@@ -68,27 +57,31 @@ public class EnhanceRpcProxyPostprocessor implements BeanFactoryPostProcessor, A
                     continue;
                 }
                 Map<String, Object> attrs = am.getAnnotationAttributes(RpcProxy.class.getName());
-                if (attrs.containsKey("serviceName")) {
-                    serviceNameSet.add((String) attrs.get("serviceName"));
+                String key = "serviceName";
+                if (attrs != null && attrs.containsKey(key)) {
+                    String serviceName = (String) attrs.get(key);
+                    serviceNameSet.add(serviceName);
+                    beanFactory.registerSingleton(am.getClassName(), enhance(am.getClassName(), attrs, serviceName));
                 }
-                beanFactory.registerSingleton(am.getClassName(), enhance(am.getClassName(), attrs));
-
             }
-
+            nettyClient.setServiceNameSet(serviceNameSet);
         } catch (final Exception e) {
             throw new RuntimeException(e);
         }
     }
 
-    private Object enhance(String className, Map<String, Object> attrs) throws ClassNotFoundException {
+    private Object enhance(String className, Map<String, Object> attrs, String serviceName) throws ClassNotFoundException {
         final Class<?> clazz = Class.forName(className);
         return Proxy.newProxyInstance(clazz.getClassLoader(), new Class[]{clazz},
                 (proxy, method, args) -> {
-                    log.info("enhance {} {} {} ", proxy, method, args);
+                    if (Arrays.stream(clazz.getDeclaredMethods()).noneMatch(m -> m.getName().equals(method.getName()))) {
+                        return method.invoke(clazz.newInstance(), args);
+                    }
                     RpcRequest request = new RpcRequest();
-                    request.setClzName(className);
+                    request.setClzName(clazz.getSimpleName());
                     request.setMethod(method.getName());
                     request.setQualifier((String) attrs.get("qualifier"));
+                    request.setServiceName(serviceName);
                     request.setArgs(args);
                     request.setArgTypes(method.getParameterTypes());
                     request.setSeqId(SnowflakeIdWorker.getId());
@@ -96,7 +89,7 @@ public class EnhanceRpcProxyPostprocessor implements BeanFactoryPostProcessor, A
                     Object result = nettyClient.send(request);
                     Class<?> returnType = method.getReturnType();
 
-                    RpcResponse response = JSON.parseObject(result.toString(), RpcResponse.class);
+                    RpcResponse response = (RpcResponse) result;
                     if (response.getCode() == 1) {
                         throw new Exception(response.getErrMsg());
                     }
@@ -112,7 +105,6 @@ public class EnhanceRpcProxyPostprocessor implements BeanFactoryPostProcessor, A
                     }
                 });
     }
-
 
     @Override
     public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {

@@ -1,16 +1,8 @@
-/**
- * @(#)NettyClientHandler.java, 6月 07, 2021.
- * <p>
- * Copyright 2021 fenbi.com. All rights reserved.
- * FENBI.COM PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
- */
 package org.badger.core.bootstrap.handler;
 
 import com.alibaba.fastjson.JSON;
-import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
-import io.netty.handler.timeout.IdleStateEvent;
 import lombok.extern.slf4j.Slf4j;
 import org.badger.core.bootstrap.entity.RpcResponse;
 
@@ -46,13 +38,6 @@ public class NettyClientHandler extends ChannelInboundHandlerAdapter {
 
     @Override
     public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
-        // server will close channel when server don't receive any request from client util timeout.
-        if (evt instanceof IdleStateEvent) {
-            Channel channel = ctx.channel();
-            log.info("IdleStateEvent triggered, close channel " + channel);
-            channel.close();
-        } else {
-            super.userEventTriggered(ctx, evt);
-        }
+        super.userEventTriggered(ctx, evt);
     }
 }

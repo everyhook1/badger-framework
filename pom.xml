@@ -112,9 +112,7 @@
 
     <modules>
         <module>badger-core</module>
-        <module>badger-client</module>
-        <module>badger-common</module>
-        <module>badger-example</module>
+        <module>badger-provider</module>
         <module>badger-test</module>
     </modules>
 

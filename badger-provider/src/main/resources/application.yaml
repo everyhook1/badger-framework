@@ -1,0 +1,6 @@
+rpc:
+  serviceName: badger-example
+  port: 11311
+
+zk:
+  address: 127.0.0.1:2181
