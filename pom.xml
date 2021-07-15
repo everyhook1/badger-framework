@@ -112,8 +112,7 @@
 
     <modules>
         <module>badger-core</module>
-        <module>badger-provider</module>
-        <module>badger-test</module>
+        <module>badger-example</module>
     </modules>
 
     <build>

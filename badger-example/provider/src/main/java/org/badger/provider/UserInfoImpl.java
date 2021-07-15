@@ -1,10 +1,4 @@
-/**
- * @(#)UserInfoImpl.java, 6月 09, 2021.
- * <p>
- * Copyright 2021 fenbi.com. All rights reserved.
- * FENBI.COM PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
- */
-package org.badger.example;
+package org.badger.provider;
 
 import org.springframework.stereotype.Service;
 

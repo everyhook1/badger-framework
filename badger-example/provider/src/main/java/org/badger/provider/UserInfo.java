@@ -1,5 +1,4 @@
-package org.badger.example;
-
+package org.badger.provider;
 import org.badger.core.bootstrap.entity.RpcProvider;
 
 @RpcProvider

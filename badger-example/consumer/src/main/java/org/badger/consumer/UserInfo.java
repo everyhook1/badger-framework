@@ -1,4 +1,4 @@
-package org.badger.test;
+package org.badger.consumer;
 
 import org.badger.core.bootstrap.entity.RpcProxy;
 
