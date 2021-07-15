@@ -14,26 +14,33 @@ rpc:
 zk:
   address: 127.0.0.1:2181
 ```
+
 ```java
+
 @RpcProvider
 public interface UserInfo {
     String echo(String str);
 }
 
 ```
+
 ### consumer
+
 ```yaml
 zk:
   address: 127.0.0.1:2181
 ```
+
 ```java
+
 @RpcProxy(serviceName = "badger-example")
 public interface UserInfo {
     String echo(String str);
 }
 
 ```
-assume you already has a local zookeeper.
+
+assume you already have a local zookeeper.
 
 ```shell
 start zookeeper
