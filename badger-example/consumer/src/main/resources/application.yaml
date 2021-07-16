@@ -1,5 +1,19 @@
-server:
-  port: 8081
+spring:
+  profiles:
+    active: local
 
+---
+spring:
+  config:
+    activate:
+      on-profile: local
+zk:
+  address: 127.0.0.1:2181
+
+---
+spring:
+  config:
+    activate:
+      on-profile: test
 zk:
   address: 127.0.0.1:2181

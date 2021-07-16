@@ -35,17 +35,10 @@ import java.util.TreeSet;
 
 public class KryoSerialization {
 
-    private static KryoSerialization INSTANCE;
+    private static final ThreadLocal<KryoSerialization> INSTANCE = ThreadLocal.withInitial(KryoSerialization::new);
 
     public static KryoSerialization getInstance() {
-        if (INSTANCE == null) {
-            synchronized (KryoSerialization.class) {
-                if (INSTANCE == null) {
-                    INSTANCE = new KryoSerialization();
-                }
-            }
-        }
-        return INSTANCE;
+        return INSTANCE.get();
     }
 
     private static final int DEFAULT_INPUT_BUFFER_SIZE = 2048;
