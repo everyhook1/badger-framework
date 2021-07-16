@@ -7,7 +7,7 @@ import org.badger.core.bootstrap.serial.KryoSerialization;
 
 import java.util.List;
 
-public class KryoNettyDecoder extends ByteToMessageDecoder {
+public class KryoDecoder extends ByteToMessageDecoder {
 
     @Override
     protected void decode(ChannelHandlerContext ctx, ByteBuf in, List<Object> out) {

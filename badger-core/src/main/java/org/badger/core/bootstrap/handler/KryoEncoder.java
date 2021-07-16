@@ -5,7 +5,7 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.MessageToByteEncoder;
 import org.badger.core.bootstrap.serial.KryoSerialization;
 
-public class KryoNettyEncoder extends MessageToByteEncoder<Object> {
+public class KryoEncoder extends MessageToByteEncoder<Object> {
 
     protected void encode(ChannelHandlerContext ctx, Object object, ByteBuf out) {
         // Get object-encoding method from KryoSerialization

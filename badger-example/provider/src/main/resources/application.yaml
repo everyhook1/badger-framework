@@ -10,8 +10,8 @@ spring:
 
 rpc:
   serviceName: badger-example
-  port: 123
-server.port: 3333
+  port: 11311
+
 zk:
   address: 127.0.0.1:2181
 
@@ -20,10 +20,10 @@ spring:
   config:
     activate:
       on-profile: test
-server.port: 3335
+
 rpc:
   serviceName: badger-example
-  port: 456
+  port: 11311
 
 zk:
   address: 127.0.0.1:2181
