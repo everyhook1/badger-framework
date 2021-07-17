@@ -1,16 +1,8 @@
 package org.badger.core.bootstrap;
 
 import io.netty.bootstrap.Bootstrap;
-import io.netty.channel.Channel;
-import io.netty.channel.ChannelInitializer;
-import io.netty.channel.ChannelOption;
-import io.netty.channel.ChannelPipeline;
-import io.netty.channel.EventLoopGroup;
-import io.netty.channel.epoll.Epoll;
-import io.netty.channel.epoll.EpollChannelOption;
-import io.netty.channel.epoll.EpollEventLoopGroup;
-import io.netty.channel.epoll.EpollMode;
-import io.netty.channel.epoll.EpollSocketChannel;
+import io.netty.channel.*;
+import io.netty.channel.epoll.*;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
@@ -28,6 +20,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.SynchronousQueue;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @author liubin01
@@ -99,6 +92,9 @@ public class NettyClient {
         SynchronousQueue<Object> queue = new SynchronousQueue<>();
         REQ_MAP.put(request.getSeqId(), queue);
         channel.writeAndFlush(request);
+        if (request.getTimeout() > 0) {
+            return queue.poll(request.getTimeout(), TimeUnit.MILLISECONDS);
+        }
         return queue.take();
     }
 

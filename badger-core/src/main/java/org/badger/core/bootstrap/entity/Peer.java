@@ -51,6 +51,10 @@ public class Peer {
             return;
         }
         Channel channel = channelMap.get(pair);
+        if (isConnected(channel)) {
+            log.info("check channel {} is active,don't close", channel);
+            return;
+        }
         closeChannel(channel);
         channelMap.remove(pair);
         ends.removeIf(end -> end.host.equals(host) && end.port == port);

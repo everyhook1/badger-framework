@@ -1,6 +1,8 @@
 # badger-framework
 
 A simple Netty Rpc
+## Performance
+ QPS : 5800
 
 ## How To Use
 

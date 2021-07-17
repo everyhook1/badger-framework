@@ -8,7 +8,8 @@ import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
 import org.apache.curator.framework.recipes.cache.CuratorCache;
 import org.apache.curator.framework.recipes.cache.CuratorCacheListener;
-import org.apache.curator.retry.RetryNTimes;
+import org.apache.curator.framework.state.ConnectionState;
+import org.apache.curator.retry.ExponentialBackoffRetry;
 import org.apache.zookeeper.CreateMode;
 import org.badger.core.bootstrap.NettyClient;
 import org.badger.core.bootstrap.NettyServer;
@@ -58,9 +59,12 @@ public class ProviderConfig implements ApplicationContextAware {
     @Bean
     @ConditionalOnBean(ZkConfig.class)
     public CuratorFramework curatorFramework(ZkConfig zkConfig) {
-        RetryPolicy retryPolicy
-                = new RetryNTimes(zkConfig.getMaxRetries(), zkConfig.getSleepMsBetweenRetries());
-        CuratorFramework zkClient = CuratorFrameworkFactory.newClient(zkConfig.getAddress(), retryPolicy);
+        RetryPolicy policy = new ExponentialBackoffRetry(zkConfig.getSleepMsBetweenRetries(), zkConfig.getMaxRetries());
+        CuratorFramework zkClient = CuratorFrameworkFactory
+                .builder()
+                .connectString(zkConfig.getAddress())
+                .retryPolicy(policy)
+                .build();
         zkClient.start();
         return zkClient;
     }
@@ -119,9 +123,22 @@ public class ProviderConfig implements ApplicationContextAware {
         });
         NettyServer nettyServer = new NettyServer(nettyServerConfig, serviceMap, servicePairMap);
         nettyServer.start();
-        client.create().creatingParentsIfNeeded().withMode(CreateMode.EPHEMERAL)
-                .forPath(String.format("/%s/%s:%s", nettyServerConfig.getServiceName(), IpUtil.getIpAddress(), nettyServerConfig.getPort()));
+        register(client, nettyServerConfig);
+        client.getConnectionStateListenable().addListener((cli, newState) -> {
+            if (newState == ConnectionState.RECONNECTED) {
+                register(client, nettyServerConfig);
+            }
+        });
         return nettyServer;
+    }
+
+    private void register(CuratorFramework client, NettyServerConfig nettyServerConfig) {
+        try {
+            client.create().creatingParentsIfNeeded().withMode(CreateMode.EPHEMERAL)
+                    .forPath(String.format("/%s/%s:%s", nettyServerConfig.getServiceName(), IpUtil.getIpAddress(), nettyServerConfig.getPort()));
+        } catch (Exception e) {
+            log.error("register error {} ,{}", client, nettyServerConfig, e);
+        }
     }
 
     @Override

@@ -12,8 +12,8 @@ public class KryoDecoder extends ByteToMessageDecoder {
     @Override
     protected void decode(ChannelHandlerContext ctx, ByteBuf in, List<Object> out) {
 
-        // Get sure bytes are more than 2
-        if (in.readableBytes() < 2)
+        // Get sure bytes are more than 4
+        if (in.readableBytes() < 4)
             return;
 
         // mark the reader index, to get back to it.

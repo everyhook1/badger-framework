@@ -12,4 +12,6 @@ public @interface RpcProxy {
     String qualifier() default "";
 
     String serviceName() default "";
+
+    long timeout() default 0L;
 }

@@ -14,4 +14,5 @@ public class RpcRequest {
     private String method;
     private Object[] args;
     private Class<?>[] argTypes;
+    private long timeout;
 }
