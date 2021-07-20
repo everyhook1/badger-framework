@@ -1,6 +1,8 @@
 package org.badger.core.bootstrap.codec.serializer.impl;
 
 import org.badger.core.bootstrap.codec.serializer.RpcSerializer;
+import org.badger.core.bootstrap.entity.RpcRequest;
+import org.badger.core.bootstrap.entity.RpcResponse;
 import org.nustaq.serialization.FSTConfiguration;
 import org.nustaq.serialization.FSTObjectInput;
 import org.nustaq.serialization.FSTObjectOutput;
@@ -12,6 +14,12 @@ import java.io.IOException;
 public class FstSerializer implements RpcSerializer {
     private static final FSTConfiguration configuration = FSTConfiguration
             .createDefaultConfiguration();
+
+    static {
+        configuration.registerClass(RpcResponse.class);
+        configuration.registerClass(RpcRequest.class);
+        configuration.setShareReferences(false);
+    }
 
     @Override
     public <T> byte[] serialize(T obj) throws IOException {
