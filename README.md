@@ -2,7 +2,8 @@
 
 A simple Netty Rpc
 ## Performance
- QPS : 5800
+![avatar](./docs/system.png)
+![avatar](./docs/jmeter.png)
 
 ## How To Use
 
