@@ -1,9 +1,3 @@
-/**
- * @(#)JdkSerializer.java, 7月 20, 2021.
- * <p>
- * Copyright 2021 fenbi.com. All rights reserved.
- * FENBI.COM PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
- */
 package org.badger.core.bootstrap.codec.serializer.impl;
 
 import org.badger.core.bootstrap.codec.serializer.RpcSerializer;

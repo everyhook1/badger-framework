@@ -1,4 +1,4 @@
-package org.badger.core.bootstrap.confg;
+package org.badger.core.bootstrap.config;
 
 import lombok.Data;
 

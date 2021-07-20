@@ -1,9 +1,3 @@
-/**
- * @(#)RpcDecoder.java, 7月 20, 2021.
- * <p>
- * Copyright 2021 fenbi.com. All rights reserved.
- * FENBI.COM PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
- */
 package org.badger.core.bootstrap.codec;
 
 import io.netty.buffer.ByteBuf;
@@ -12,7 +6,6 @@ import io.netty.handler.codec.ByteToMessageDecoder;
 import lombok.extern.slf4j.Slf4j;
 import org.badger.core.bootstrap.codec.serializer.RpcSerializer;
 
-import java.io.IOException;
 import java.util.List;
 
 /**
