@@ -1,14 +1,15 @@
 spring:
   profiles:
     active: local
-
+server:
+  port: 8181
 ---
 spring:
   config:
     activate:
       on-profile: local
 zk:
-  address: 127.0.0.1:2181
+  address: 10.9.62.173:2181
 
 ---
 spring:

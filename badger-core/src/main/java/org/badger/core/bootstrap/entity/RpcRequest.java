@@ -9,6 +9,7 @@ import java.io.Serializable;
  */
 @Data
 public class RpcRequest implements Serializable {
+    private static final long serialVersionUID = 7390539685431550199L;
     private long seqId;
     private String serviceName;
     private String clzName;

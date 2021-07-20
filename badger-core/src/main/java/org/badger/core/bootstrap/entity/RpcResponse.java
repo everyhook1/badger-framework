@@ -9,6 +9,7 @@ import java.io.Serializable;
  */
 @Data
 public class RpcResponse implements Serializable {
+    private static final long serialVersionUID = 288145680694780304L;
     private long seqId;
     private int code;
     private String errMsg;
