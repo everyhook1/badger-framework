@@ -20,10 +20,13 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
+import org.badger.core.bootstrap.codec.RpcDecoder;
+import org.badger.core.bootstrap.codec.RpcEncoder;
+import org.badger.core.bootstrap.codec.serializer.RpcSerializer;
+import org.badger.core.bootstrap.codec.serializer.SerializerEnum;
 import org.badger.core.bootstrap.confg.NettyServerConfig;
 import org.badger.core.bootstrap.entity.RpcRequest;
-import org.badger.core.bootstrap.handler.KryoDecoder;
-import org.badger.core.bootstrap.handler.KryoEncoder;
+import org.badger.core.bootstrap.entity.RpcResponse;
 import org.badger.core.bootstrap.handler.NettyServerHandler;
 
 import javax.annotation.PreDestroy;
@@ -49,6 +52,7 @@ public class NettyServer {
 
     private final Map<String, Object> serviceMap;
     private final Map<Pair<String, String>, Object> servicePairMap;
+    private static final RpcSerializer rpcSerializer = SerializerEnum.DEFAULT();
 
     public NettyServer(NettyServerConfig config, Map<String, Object> serviceMap,
                        Map<Pair<String, String>, Object> servicePairMap) {
@@ -111,8 +115,8 @@ public class NettyServer {
                     protected void initChannel(SocketChannel ch) {
                         ChannelPipeline pipeline = ch.pipeline();
                         pipeline.addLast(new IdleStateHandler(0, 0, 60));
-                        pipeline.addLast("decoder", new KryoDecoder());
-                        pipeline.addLast("encoder", new KryoEncoder());
+                        pipeline.addLast("decoder", new RpcDecoder(rpcSerializer, RpcRequest.class));
+                        pipeline.addLast("encoder", new RpcEncoder(rpcSerializer, RpcResponse.class));
                         pipeline.addLast("dispatch", new NettyServerHandler(NettyServer.this));
                     }
                 });

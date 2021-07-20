@@ -1,17 +1,30 @@
 package org.badger.core.bootstrap;
 
 import io.netty.bootstrap.Bootstrap;
-import io.netty.channel.*;
-import io.netty.channel.epoll.*;
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelInitializer;
+import io.netty.channel.ChannelOption;
+import io.netty.channel.ChannelPipeline;
+import io.netty.channel.EventLoopGroup;
+import io.netty.channel.epoll.Epoll;
+import io.netty.channel.epoll.EpollChannelOption;
+import io.netty.channel.epoll.EpollEventLoopGroup;
+import io.netty.channel.epoll.EpollMode;
+import io.netty.channel.epoll.EpollSocketChannel;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
+import io.netty.handler.logging.LogLevel;
+import io.netty.handler.logging.LoggingHandler;
 import io.netty.handler.timeout.IdleStateHandler;
 import lombok.extern.slf4j.Slf4j;
+import org.badger.core.bootstrap.codec.RpcDecoder;
+import org.badger.core.bootstrap.codec.RpcEncoder;
+import org.badger.core.bootstrap.codec.serializer.RpcSerializer;
+import org.badger.core.bootstrap.codec.serializer.SerializerEnum;
 import org.badger.core.bootstrap.entity.Peer;
 import org.badger.core.bootstrap.entity.RpcRequest;
-import org.badger.core.bootstrap.handler.KryoDecoder;
-import org.badger.core.bootstrap.handler.KryoEncoder;
+import org.badger.core.bootstrap.entity.RpcResponse;
 import org.badger.core.bootstrap.handler.NettyClientHandler;
 
 import javax.annotation.PreDestroy;
@@ -46,6 +59,7 @@ public class NettyClient {
     public static final Map<Long, SynchronousQueue<Object>> REQ_MAP = new ConcurrentHashMap<>();
     private static final Map<String, Peer> peerMap = new ConcurrentHashMap<>();
     private Set<String> serviceNameSet;
+    private static final RpcSerializer rpcSerializer = SerializerEnum.DEFAULT();
 
     public NettyClient() {
         boolean isEpoll = Epoll.isAvailable();
@@ -60,8 +74,8 @@ public class NettyClient {
                     protected void initChannel(SocketChannel ch) {
                         ChannelPipeline pipeline = ch.pipeline();
                         pipeline.addLast(new IdleStateHandler(0, 0, 30));
-                        pipeline.addLast("decoder", new KryoDecoder());
-                        pipeline.addLast("encoder", new KryoEncoder());
+                        pipeline.addLast("decoder", new RpcDecoder(rpcSerializer, RpcResponse.class));
+                        pipeline.addLast("encoder", new RpcEncoder(rpcSerializer, RpcRequest.class));
                         pipeline.addLast("handler", new NettyClientHandler());
                     }
                 });
