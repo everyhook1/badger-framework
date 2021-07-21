@@ -14,8 +14,6 @@ import io.netty.channel.epoll.EpollSocketChannel;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
-import io.netty.handler.logging.LogLevel;
-import io.netty.handler.logging.LoggingHandler;
 import io.netty.handler.timeout.IdleStateHandler;
 import lombok.extern.slf4j.Slf4j;
 import org.badger.core.bootstrap.codec.RpcDecoder;
@@ -41,7 +39,7 @@ import java.util.concurrent.TimeUnit;
 @Slf4j
 public class NettyClient {
 
-    private static NettyClient INSTANCE;
+    private volatile static NettyClient INSTANCE;
 
     public static NettyClient getInstance() {
         if (INSTANCE == null) {

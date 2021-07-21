@@ -19,12 +19,12 @@ public class SnowflakeIdWorker {
     /**
      * 机器id所占的位数
      */
-    private final long workerIdBits = 5L;
+    private static final long workerIdBits = 5L;
 
     /**
      * 数据标识id所占的位数
      */
-    private final long datacenterIdBits = 5L;
+    private static final long datacenterIdBits = 5L;
 
     /**
      * 工作机器ID(0~31)
@@ -93,9 +93,7 @@ public class SnowflakeIdWorker {
                 //阻塞到下一个毫秒,获得新的时间戳
                 timestamp = tilNextMillis(lastTimestamp);
             }
-        }
-        //时间戳改变，毫秒内序列重置
-        else {
+        } else { //时间戳改变，毫秒内序列重置
             sequence = 0L;
         }
 
