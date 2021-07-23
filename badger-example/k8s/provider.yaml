@@ -3,7 +3,7 @@ kind: Deployment
 metadata:
   name: provider
 spec:
-  replicas: 1
+  replicas: 2
   selector:
     matchLabels:
       app: provider
@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
         - name: provider
-          image: docker.io/everyhook/badger-provider
+          image: localhost:5000/everyhook/badger-provider
           imagePullPolicy: Always
           ports:
             - containerPort: 8080
@@ -30,6 +30,6 @@ spec:
   selector:
     app: provider
   ports:
-    - port: 701
-      targetPort: 8080
+    - port: 8080
+      targetPort: 8087
   type: LoadBalancer

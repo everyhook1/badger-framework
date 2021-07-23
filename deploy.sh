@@ -1,6 +1,6 @@
 mvn clean package
-consumerimg=everyhook/badger-consumer
-providerimg=everyhook/badger-provider
+consumerimg=localhost:5000/everyhook/badger-consumer
+providerimg=localhost:5000/everyhook/badger-provider
 LOCAL=$(PWD)
 echo "$LOCAL"
 docker images | grep everyhook | awk '{print $3}' | xargs docker rmi

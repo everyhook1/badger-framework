@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
         - name: consumer
-          image: docker.io/everyhook/badger-consumer
+          image: localhost:5000/everyhook/badger-consumer
           imagePullPolicy: Always
           ports:
             - containerPort: 8080
@@ -30,6 +30,6 @@ spec:
   selector:
     app: consumer
   ports:
-    - port: 702
-      targetPort: 8080
+    - port: 8080
+      targetPort: 8088
   type: LoadBalancer
