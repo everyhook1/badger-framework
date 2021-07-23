@@ -1,30 +1,6 @@
-spring:
-  profiles:
-    active: local
-server:
-  port: 8181
----
-spring:
-  config:
-    activate:
-      on-profile: local
-
 rpc:
   serviceName: badger-example
   port: 11311
 
 zk:
-  address: 10.9.62.173:2181
-
----
-spring:
-  config:
-    activate:
-      on-profile: test
-
-rpc:
-  serviceName: badger-example
-  port: 11311
-
-zk:
-  address: 127.0.0.1:2181
+  address: ${ZK_URL:127.0.0.1:2181}

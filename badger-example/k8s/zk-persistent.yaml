@@ -1,0 +1,122 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: zk-persistent
+  labels:
+    zk-name: zk-persistent
+    component: zk
+  annotations:
+    service.alpha.kubernetes.io/tolerate-unready-endpoints: "true"
+spec:
+  ports:
+  - port: 2181
+    name: zkclient
+  - port: 2888
+    name: zkserver
+  - port: 3888
+    name: zkleader
+  clusterIP: None
+  selector:
+    zk-name: zk-persistent
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: zk-persistent
+  labels:
+    zk-name: zk-persistent
+    component: zk
+spec:
+  serviceName: zk-persistent
+  selector:
+    matchLabels:
+      zk-name: zk-persistent
+      component: zk
+  replicas: 3
+  podManagementPolicy: "Parallel"
+  template:
+    metadata:
+      labels:
+        zk-name: zk-persistent
+        component: zk
+#  annotations:
+## Use this annotation if you want allocate each pod on different node
+## Note the number of nodes must be upper than REPLICAS parameter.
+#          scheduler.alpha.kubernetes.io/affinity: >
+#              {
+#                "podAntiAffinity": {
+#                  "requiredDuringSchedulingIgnoredDuringExecution": [{
+#                    "labelSelector": {
+#                      "matchExpressions": [{
+#                        "key": "zk-name",
+#                        "operator": "In",
+#                        "values": ["zk"]
+#                      }]
+#                    },
+#                    "topologyKey": "kubernetes.io/hostname"
+#                  }]
+#                }
+#              }
+    spec:
+      securityContext:
+        runAsUser: 1001
+        fsGroup: 1001
+      containers:
+      - name: zk-persistent
+        imagePullPolicy: IfNotPresent
+        image: engapa/zookeeper:3.7.0
+        resources:
+          requests:
+            memory: 512M
+            cpu: 300m
+          limits:
+            memory: 512M
+            cpu: 300m
+        ports:
+        - containerPort: 2181
+          name: zkclient
+        - containerPort: 2888
+          name: zkserver
+        - containerPort: 3888
+          name: zkleader
+        env:
+        - name: ZOO_REPLICAS
+          value: "3"
+        - name: JAVA_ZK_JVMFLAGS
+          value: "\"-Xmx512M -Xms512M\""
+        readinessProbe:
+          exec:
+            command:
+            - zkServer.sh
+            - status
+          initialDelaySeconds: 20
+          timeoutSeconds: 10
+        livenessProbe:
+          exec:
+            command:
+            - zkServer.sh
+            - status
+          initialDelaySeconds: 20
+          timeoutSeconds: 10
+        volumeMounts:
+        - name: datadir
+          mountPath: /opt/zookeeper/data
+        - name: datalogdir
+          mountPath: /opt/zookeeper/data-log
+  volumeClaimTemplates:
+  - metadata:
+      name: datadir
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      storageClassName: "standard"
+      resources:
+        requests:
+          storage: 1Gi
+  - metadata:
+      name: datalogdir
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      storageClassName: "standard"
+      resources:
+        requests:
+          storage: 1Gi
