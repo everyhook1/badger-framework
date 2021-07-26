@@ -49,7 +49,7 @@ assume you already have a local zookeeper.
 start zookeeper
 start provider 
 start consumer 
-curl http://127.0.0.1:8081/echo?name=abc
+curl http://127.0.0.1:8081/echo?str=abc
 ```
 
 then you would get response:
@@ -57,5 +57,14 @@ echo from server abc
 
 ```jmx
 jmeter -n -t rpcTest.jmx -l a -e -o b
+```
+## Kubernetes
+assume you already install docker and kind.
+```shell
+# create a cluster with local registry
+sh kind-with-registry.sh
+sh deploy.sh
+kubectl port-forward service/consumer 8080:8080
+curl http://127.0.0.1:8081/echo?str=abc
 ```
 ## HAVE FUN!

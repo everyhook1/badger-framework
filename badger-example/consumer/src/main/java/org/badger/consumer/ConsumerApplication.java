@@ -25,17 +25,18 @@ public class ConsumerApplication {
     }
 
     @GetMapping(value = "echo")
-    public String echo(String str) {
+    public String echo(@RequestParam("str") String str) {
         return userInfo.echo(str);
     }
 
     @GetMapping(value = "sum")
-    public int sum(int a, int b) {
+    public int sum(@RequestParam("a") int a,
+                   @RequestParam("b") int b) {
         return userInfo.sum(a, b);
     }
 
     @GetMapping(value = "getStrings")
-    public List<String> getStrings(String str) {
+    public List<String> getStrings(@RequestParam("str") String str) {
         return userInfo.getStrings(str);
     }
 
