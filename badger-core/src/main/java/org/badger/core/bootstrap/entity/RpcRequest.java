@@ -17,5 +17,7 @@ public class RpcRequest implements Serializable {
     private String method;
     private Object[] args;
     private Class<?>[] argTypes;
+    private RpcRequest parentRpc;
+    private Object rpcContext;
     private long timeout;
 }

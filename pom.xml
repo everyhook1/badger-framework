@@ -122,6 +122,7 @@
     <modules>
         <module>badger-core</module>
         <module>badger-example</module>
+        <module>badger-saga</module>
     </modules>
 
     <build>
