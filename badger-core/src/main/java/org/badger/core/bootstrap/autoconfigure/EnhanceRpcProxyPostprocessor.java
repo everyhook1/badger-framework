@@ -1,5 +1,8 @@
 package org.badger.core.bootstrap.autoconfigure;
 
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.badger.core.bootstrap.NettyClient;
 import org.badger.core.bootstrap.entity.RpcProxy;
@@ -9,14 +12,15 @@ import org.badger.core.bootstrap.util.SnowflakeIdWorker;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.config.BeanFactoryPostProcessor;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.core.io.Resource;
-import org.springframework.core.type.AnnotationMetadata;
 import org.springframework.core.type.classreading.MetadataReader;
 import org.springframework.core.type.classreading.SimpleMetadataReaderFactory;
 import org.springframework.stereotype.Component;
 
+import java.lang.reflect.Field;
 import java.lang.reflect.Proxy;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -34,30 +38,45 @@ public class EnhanceRpcProxyPostprocessor implements BeanFactoryPostProcessor, A
 
     public static final NettyClient nettyClient = NettyClient.getInstance();
 
+    private String getBasePackage() {
+        Map<String, Object> map = applicationContext.getBeansWithAnnotation(SpringBootApplication.class);
+        for (Map.Entry<String, Object> entry : map.entrySet()) {
+            Object v = entry.getValue();
+            String n = v.getClass().getPackage().getName();
+            return n.replace(".", "/") + "/";
+        }
+        return "";
+    }
+
     @Override
     public void postProcessBeanFactory(ConfigurableListableBeanFactory beanFactory) throws BeansException {
         try {
-            final String packageSearchPath = "classpath*:org/**/*.class";
-
-            final Resource[] resources =
+            String packageSearchPath = "classpath*:" + getBasePackage() + "**/*.class";
+            Resource[] resources =
                     applicationContext.getResources(packageSearchPath);
-            final SimpleMetadataReaderFactory factory = new
+            SimpleMetadataReaderFactory factory = new
                     SimpleMetadataReaderFactory(applicationContext);
-
+            ClassLoader loader = ClassLoader.getSystemClassLoader();
             Set<String> serviceNameSet = new HashSet<>();
-            for (final Resource resource : resources) {
-                final MetadataReader mdReader = factory.getMetadataReader(resource);
+            for (Resource resource : resources) {
+                MetadataReader mdReader = factory.getMetadataReader(resource);
+                Class<?> aClazz = loader.loadClass(mdReader.getClassMetadata().getClassName());
+                Field[] fields = null;
+                try {
+                    fields = aClazz.getDeclaredFields();
+                } catch (Throwable ignored) {
 
-                final AnnotationMetadata am = mdReader.getAnnotationMetadata();
-                if (!am.hasAnnotation(RpcProxy.class.getName())) {
-                    continue;
                 }
-                Map<String, Object> attrs = am.getAnnotationAttributes(RpcProxy.class.getName());
-                String key = "serviceName";
-                if (attrs != null && attrs.containsKey(key)) {
-                    String serviceName = (String) attrs.get(key);
-                    serviceNameSet.add(serviceName);
-                    beanFactory.registerSingleton(am.getClassName(), enhance(am.getClassName(), attrs, serviceName));
+                if (fields != null) {
+                    for (Field field : fields) {
+                        RpcProxy fan = field.getAnnotation(RpcProxy.class);
+                        if (fan != null && !serviceNameSet.contains(fan.serviceName())) {
+                            serviceNameSet.add(fan.serviceName());
+                            String clzName = field.getType().getName();
+                            beanFactory.registerSingleton(clzName, enhance(clzName,
+                                    new RpcContext(fan.qualifier(), fan.serviceName(), fan.timeout())));
+                        }
+                    }
                 }
             }
             nettyClient.setServiceNameSet(serviceNameSet);
@@ -66,7 +85,18 @@ public class EnhanceRpcProxyPostprocessor implements BeanFactoryPostProcessor, A
         }
     }
 
-    private Object enhance(String className, Map<String, Object> attrs, String serviceName) throws ClassNotFoundException {
+    @Data
+    @AllArgsConstructor
+    @NoArgsConstructor
+    static class RpcContext {
+        private String qualifier;
+
+        private String serviceName;
+
+        private long timeout;
+    }
+
+    private Object enhance(String className, RpcContext context) throws ClassNotFoundException {
         final Class<?> clazz = Class.forName(className);
         return Proxy.newProxyInstance(clazz.getClassLoader(), new Class[]{clazz},
                 (proxy, method, args) -> {
@@ -76,8 +106,9 @@ public class EnhanceRpcProxyPostprocessor implements BeanFactoryPostProcessor, A
                     RpcRequest request = new RpcRequest();
                     request.setClzName(clazz.getSimpleName());
                     request.setMethod(method.getName());
-                    request.setQualifier((String) attrs.get("qualifier"));
-                    request.setServiceName(serviceName);
+                    request.setQualifier(context.qualifier);
+                    request.setServiceName(context.serviceName);
+                    request.setTimeout(context.timeout);
                     request.setArgs(args);
                     request.setArgTypes(method.getParameterTypes());
                     request.setSeqId(SnowflakeIdWorker.getId());

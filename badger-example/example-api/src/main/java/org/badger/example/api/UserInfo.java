@@ -1,11 +1,8 @@
-package org.badger.provider;
-
-import org.badger.core.bootstrap.entity.RpcProvider;
+package org.badger.example.api;
 
 import java.util.List;
 import java.util.Map;
 
-@RpcProvider
 public interface UserInfo {
 
     String echo(String str);

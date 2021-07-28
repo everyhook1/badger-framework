@@ -1,5 +1,7 @@
 package org.badger.provider;
 
+import org.badger.core.bootstrap.entity.RpcProvider;
+import org.badger.example.api.UserInfo;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -10,6 +12,7 @@ import java.util.Map;
 /**
  * @author liubin01
  */
+@RpcProvider
 @Service
 public class UserInfoImpl implements UserInfo {
 
