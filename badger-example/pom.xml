@@ -19,5 +19,7 @@
     <modules>
         <module>provider</module>
         <module>consumer</module>
+        <module>backend</module>
+        <module>example-api</module>
     </modules>
 </project>

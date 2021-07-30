@@ -51,16 +51,24 @@ public class EnhanceRpcProxyPostprocessor implements BeanFactoryPostProcessor, A
     @Override
     public void postProcessBeanFactory(ConfigurableListableBeanFactory beanFactory) throws BeansException {
         try {
+            log.info("1");
             String packageSearchPath = "classpath*:" + getBasePackage() + "**/*.class";
             Resource[] resources =
                     applicationContext.getResources(packageSearchPath);
+            log.info("2");
             SimpleMetadataReaderFactory factory = new
                     SimpleMetadataReaderFactory(applicationContext);
-            ClassLoader loader = ClassLoader.getSystemClassLoader();
+            log.info("3");
+            ClassLoader loader = Thread.currentThread().getContextClassLoader();
+            log.info("4");
             Set<String> serviceNameSet = new HashSet<>();
+            log.info("5");
             for (Resource resource : resources) {
+                log.info("6");
                 MetadataReader mdReader = factory.getMetadataReader(resource);
+                log.info("7");
                 Class<?> aClazz = loader.loadClass(mdReader.getClassMetadata().getClassName());
+                log.info("8");
                 Field[] fields = null;
                 try {
                     fields = aClazz.getDeclaredFields();
@@ -81,6 +89,7 @@ public class EnhanceRpcProxyPostprocessor implements BeanFactoryPostProcessor, A
             }
             nettyClient.setServiceNameSet(serviceNameSet);
         } catch (final Exception e) {
+            log.error("error", e);
             throw new RuntimeException(e);
         }
     }

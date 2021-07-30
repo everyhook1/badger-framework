@@ -1,0 +1,6 @@
+rpc:
+  serviceName: badger-backend
+  port: 11311
+
+zk:
+  address: ${ZK_URL:127.0.0.1:2181}

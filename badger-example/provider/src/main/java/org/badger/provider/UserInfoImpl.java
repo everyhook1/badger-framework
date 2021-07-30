@@ -1,7 +1,10 @@
 package org.badger.provider;
 
 import org.badger.core.bootstrap.entity.RpcProvider;
+import org.badger.core.bootstrap.entity.RpcProxy;
+import org.badger.example.api.AccountInfo;
 import org.badger.example.api.UserInfo;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -16,6 +19,10 @@ import java.util.Map;
 @Service
 public class UserInfoImpl implements UserInfo {
 
+    @Autowired
+    @RpcProxy(serviceName = "badger-backend")
+    private AccountInfo accountInfo;
+
     @Override
     public String echo(String str) {
         return String.format("echo from server %s ", str);
@@ -23,7 +30,7 @@ public class UserInfoImpl implements UserInfo {
 
     @Override
     public int sum(int a, int b) {
-        return a + b;
+        return accountInfo.delta(a, b);
     }
 
     @Override
