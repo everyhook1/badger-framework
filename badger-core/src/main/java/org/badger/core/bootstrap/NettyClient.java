@@ -52,14 +52,28 @@ public class NettyClient {
         return INSTANCE;
     }
 
-    private final EventLoopGroup group;
-    private final Bootstrap bootstrap;
+    public static NettyClient getInstance(RpcSerializer rpcSerializer) {
+        if (INSTANCE == null) {
+            synchronized (NettyClient.class) {
+                if (INSTANCE == null) {
+                    INSTANCE = new NettyClient(rpcSerializer);
+                }
+            }
+        }
+        return INSTANCE;
+    }
+
+    private EventLoopGroup group;
+    private Bootstrap bootstrap;
     public static final Map<Long, SynchronousQueue<Object>> REQ_MAP = new ConcurrentHashMap<>();
-    private static final Map<String, Peer> peerMap = new ConcurrentHashMap<>();
+    private final Map<String, Peer> peerMap = new ConcurrentHashMap<>();
     private Set<String> serviceNameSet;
-    private static final RpcSerializer rpcSerializer = SerializerEnum.DEFAULT();
 
     public NettyClient() {
+        this(SerializerEnum.DEFAULT());
+    }
+
+    public NettyClient(RpcSerializer rpcSerializer) {
         boolean isEpoll = Epoll.isAvailable();
         int cores = Runtime.getRuntime().availableProcessors();
         this.group = isEpoll ? new EpollEventLoopGroup(10 * cores) : new NioEventLoopGroup(10 * cores);
@@ -86,6 +100,7 @@ public class NettyClient {
     public void destroy() {
         group.shutdownGracefully();
         peerMap.forEach((k, v) -> v.destroy());
+        INSTANCE = null;
     }
 
     public Object send(RpcRequest request) throws InterruptedException {

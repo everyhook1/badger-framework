@@ -52,13 +52,19 @@ public class NettyServer {
 
     private final Map<String, Object> serviceMap;
     private final Map<Pair<String, String>, Object> servicePairMap;
-    private static final RpcSerializer rpcSerializer = SerializerEnum.DEFAULT();
+    private RpcSerializer rpcSerializer;
 
     public NettyServer(NettyServerConfig config, Map<String, Object> serviceMap,
                        Map<Pair<String, String>, Object> servicePairMap) {
+        this(config, serviceMap, servicePairMap, SerializerEnum.DEFAULT());
+    }
+
+    public NettyServer(NettyServerConfig config, Map<String, Object> serviceMap,
+                       Map<Pair<String, String>, Object> servicePairMap, RpcSerializer rpcSerializer) {
         this.config = config;
         this.serviceMap = serviceMap;
         this.servicePairMap = servicePairMap;
+        this.rpcSerializer = rpcSerializer;
     }
 
     public Object dispatch(RpcRequest request) throws Exception {
@@ -136,7 +142,7 @@ public class NettyServer {
     }
 
     @PreDestroy
-    public void stop() {
+    public void destroy() {
         log.info("netty-server stopped.");
         if (boss != null) {
             boss.shutdownGracefully();

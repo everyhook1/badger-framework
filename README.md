@@ -51,7 +51,7 @@ assume you already have a local zookeeper.
 start zookeeper
 start provider 
 start consumer 
-curl http://127.0.0.1:8081/echo?str=abc
+curl http://127.0.0.1:8080/echo?str=abc
 ```
 
 then you would get response:
@@ -70,7 +70,7 @@ assume you already install docker and kind.
 sh kind-with-registry.sh
 sh deploy.sh
 kubectl port-forward service/consumer 8080:8080
-curl http://127.0.0.1:8081/echo?str=abc
+curl http://127.0.0.1:8080/echo?str=abc
 ```
 
 ## RoadMap

@@ -1,11 +1,15 @@
 package org.badger.core.bootstrap.config;
 
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 /**
  * @author liubin01
  */
 @Data
+@AllArgsConstructor
+@NoArgsConstructor
 public class NettyServerConfig {
 
 
