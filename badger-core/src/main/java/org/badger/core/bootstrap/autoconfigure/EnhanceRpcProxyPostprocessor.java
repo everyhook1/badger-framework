@@ -1,13 +1,11 @@
 package org.badger.core.bootstrap.autoconfigure;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.badger.core.bootstrap.NettyClient;
 import org.badger.core.bootstrap.entity.RpcProxy;
 import org.badger.core.bootstrap.entity.RpcRequest;
 import org.badger.core.bootstrap.entity.RpcResponse;
+import org.badger.core.bootstrap.entity.SpanContext;
 import org.badger.core.bootstrap.util.SnowflakeIdWorker;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.config.BeanFactoryPostProcessor;
@@ -73,8 +71,7 @@ public class EnhanceRpcProxyPostprocessor implements BeanFactoryPostProcessor, A
                         if (fan != null && !serviceNameSet.contains(fan.serviceName())) {
                             serviceNameSet.add(fan.serviceName());
                             String clzName = field.getType().getName();
-                            beanFactory.registerSingleton(clzName, enhance(clzName,
-                                    new RpcContext(fan.qualifier(), fan.serviceName(), fan.timeout())));
+                            beanFactory.registerSingleton(clzName, enhance(clzName, fan.qualifier(), fan.serviceName(), fan.timeout()));
                         }
                     }
                 }
@@ -86,18 +83,8 @@ public class EnhanceRpcProxyPostprocessor implements BeanFactoryPostProcessor, A
         }
     }
 
-    @Data
-    @AllArgsConstructor
-    @NoArgsConstructor
-    static class RpcContext {
-        private String qualifier;
 
-        private String serviceName;
-
-        private long timeout;
-    }
-
-    private Object enhance(String className, RpcContext context) throws ClassNotFoundException {
+    private Object enhance(String className, String qualifier, String serviceName, long timeout) throws ClassNotFoundException {
         final Class<?> clazz = Class.forName(className);
         return Proxy.newProxyInstance(clazz.getClassLoader(), new Class[]{clazz},
                 (proxy, method, args) -> {
@@ -107,13 +94,13 @@ public class EnhanceRpcProxyPostprocessor implements BeanFactoryPostProcessor, A
                     RpcRequest request = new RpcRequest();
                     request.setClzName(clazz.getSimpleName());
                     request.setMethod(method.getName());
-                    request.setQualifier(context.qualifier);
-                    request.setServiceName(context.serviceName);
-                    request.setTimeout(context.timeout);
+                    request.setQualifier(qualifier);
+                    request.setServiceName(serviceName);
+                    request.setTimeout(timeout);
                     request.setArgs(args);
                     request.setArgTypes(method.getParameterTypes());
                     request.setSeqId(SnowflakeIdWorker.getId());
-
+                    request.setParentRpc(SpanContext.getCurRequest());
                     RpcResponse response = (RpcResponse) nettyClient.send(request);
                     if (response.getCode() == 500) {
                         throw new Exception(response.getErrMsg());

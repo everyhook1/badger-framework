@@ -5,6 +5,7 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import lombok.extern.slf4j.Slf4j;
 import org.badger.core.bootstrap.NettyServer;
+import org.badger.core.bootstrap.entity.SpanContext;
 import org.badger.core.bootstrap.entity.RpcRequest;
 import org.badger.core.bootstrap.entity.RpcResponse;
 
@@ -24,6 +25,7 @@ public class NettyServerHandler extends SimpleChannelInboundHandler<Object> {
     @Override
     public void channelRead0(ChannelHandlerContext ctx, Object s) {
         RpcRequest rpcRequest = (RpcRequest) s;
+        SpanContext.setCurRequest(rpcRequest);
         RpcResponse response = new RpcResponse();
         response.setSeqId(rpcRequest.getSeqId());
         try {
@@ -33,6 +35,8 @@ public class NettyServerHandler extends SimpleChannelInboundHandler<Object> {
             log.error("channelRead0 {} process error", rpcRequest, e);
             response.setCode(500);
             response.setErrMsg("process error");
+        } finally {
+            SpanContext.removeRpcRequest();
         }
         ctx.writeAndFlush(response);
     }
