@@ -28,7 +28,7 @@ public class ServerClientTest {
         StopWatch stopwatch = new StopWatch("testSerializer");
         for (SerializerEnum value : SerializerEnum.values()) {
             stopwatch.start(value.name());
-            deltaWithSerializer(value.getRpcSerializer(), 10000);
+            deltaWithSerializer(value.getRpcSerializer(), 5000);
             stopwatch.stop();
         }
         log.info(stopwatch.prettyPrint());

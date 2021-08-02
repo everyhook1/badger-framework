@@ -43,7 +43,7 @@ public class EnhanceRpcProxyPostprocessor implements BeanFactoryPostProcessor, A
             String n = v.getClass().getPackage().getName();
             return n.replace(".", "/") + "/";
         }
-        return "";
+        return "org/badger/";
     }
 
     @Override
@@ -59,20 +59,13 @@ public class EnhanceRpcProxyPostprocessor implements BeanFactoryPostProcessor, A
             for (Resource resource : resources) {
                 MetadataReader mdReader = factory.getMetadataReader(resource);
                 Class<?> aClazz = loader.loadClass(mdReader.getClassMetadata().getClassName());
-                Field[] fields = null;
-                try {
-                    fields = aClazz.getDeclaredFields();
-                } catch (Throwable ignored) {
-
-                }
-                if (fields != null) {
-                    for (Field field : fields) {
-                        RpcProxy fan = field.getAnnotation(RpcProxy.class);
-                        if (fan != null && !serviceNameSet.contains(fan.serviceName())) {
-                            serviceNameSet.add(fan.serviceName());
-                            String clzName = field.getType().getName();
-                            beanFactory.registerSingleton(clzName, enhance(clzName, fan.qualifier(), fan.serviceName(), fan.timeout()));
-                        }
+                Field[] fields = aClazz.getDeclaredFields();
+                for (Field field : fields) {
+                    RpcProxy fan = field.getAnnotation(RpcProxy.class);
+                    if (fan != null && !serviceNameSet.contains(fan.serviceName())) {
+                        serviceNameSet.add(fan.serviceName());
+                        String clzName = field.getType().getName();
+                        beanFactory.registerSingleton(clzName, enhance(clzName, fan.qualifier(), fan.serviceName(), fan.timeout()));
                     }
                 }
             }
@@ -89,7 +82,7 @@ public class EnhanceRpcProxyPostprocessor implements BeanFactoryPostProcessor, A
         return Proxy.newProxyInstance(clazz.getClassLoader(), new Class[]{clazz},
                 (proxy, method, args) -> {
                     if (Arrays.stream(clazz.getDeclaredMethods()).noneMatch(m -> m.getName().equals(method.getName()))) {
-                        return method.invoke(clazz.newInstance(), args);
+                        return null;
                     }
                     RpcRequest request = new RpcRequest();
                     request.setClzName(clazz.getSimpleName());
