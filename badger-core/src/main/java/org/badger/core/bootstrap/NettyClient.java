@@ -63,8 +63,8 @@ public class NettyClient {
         return INSTANCE;
     }
 
-    private EventLoopGroup group;
-    private Bootstrap bootstrap;
+    private final EventLoopGroup group;
+    private final Bootstrap bootstrap;
     public static final Map<Long, SynchronousQueue<Object>> REQ_MAP = new ConcurrentHashMap<>();
     private final Map<String, Peer> peerMap = new ConcurrentHashMap<>();
     private Set<String> serviceNameSet;

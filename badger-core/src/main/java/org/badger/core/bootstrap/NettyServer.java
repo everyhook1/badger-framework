@@ -52,7 +52,7 @@ public class NettyServer {
 
     private final Map<String, Object> serviceMap;
     private final Map<Pair<String, String>, Object> servicePairMap;
-    private RpcSerializer rpcSerializer;
+    private final RpcSerializer rpcSerializer;
 
     public NettyServer(NettyServerConfig config, Map<String, Object> serviceMap,
                        Map<Pair<String, String>, Object> servicePairMap) {

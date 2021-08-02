@@ -22,19 +22,11 @@ public enum SerializerEnum {
     }
 
     public static RpcSerializer DEFAULT() {
-        return FST.rpcSerializer;
+        return KRYO.rpcSerializer;
     }
 
     public RpcSerializer getRpcSerializer() {
         return this.rpcSerializer;
     }
 
-    public static RpcSerializer findByName(String name) {
-        for (SerializerEnum value : SerializerEnum.values()) {
-            if (value.name().equalsIgnoreCase(name)) {
-                return value.rpcSerializer;
-            }
-        }
-        return DEFAULT();
-    }
 }
