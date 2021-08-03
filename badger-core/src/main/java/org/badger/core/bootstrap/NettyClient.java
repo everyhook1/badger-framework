@@ -24,8 +24,8 @@ import org.badger.core.bootstrap.entity.Peer;
 import org.badger.core.bootstrap.entity.RpcRequest;
 import org.badger.core.bootstrap.entity.RpcResponse;
 import org.badger.core.bootstrap.handler.NettyClientHandler;
+import org.springframework.beans.factory.DisposableBean;
 
-import javax.annotation.PreDestroy;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -37,7 +37,7 @@ import java.util.concurrent.TimeUnit;
  * @author liubin01
  */
 @Slf4j
-public class NettyClient {
+public class NettyClient implements DisposableBean {
 
     private volatile static NettyClient INSTANCE;
 
@@ -96,7 +96,6 @@ public class NettyClient {
         }
     }
 
-    @PreDestroy
     public void destroy() {
         group.shutdownGracefully();
         peerMap.forEach((k, v) -> v.destroy());

@@ -28,8 +28,8 @@ import org.badger.core.bootstrap.config.NettyServerConfig;
 import org.badger.core.bootstrap.entity.RpcRequest;
 import org.badger.core.bootstrap.entity.RpcResponse;
 import org.badger.core.bootstrap.handler.NettyServerHandler;
+import org.springframework.beans.factory.DisposableBean;
 
-import javax.annotation.PreDestroy;
 import java.lang.reflect.Method;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -38,7 +38,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * @author liubin01
  */
 @Slf4j
-public class NettyServer {
+public class NettyServer implements DisposableBean {
 
     private EventLoopGroup boss;
 
@@ -141,7 +141,6 @@ public class NettyServer {
         }
     }
 
-    @PreDestroy
     public void destroy() {
         log.info("netty-server stopped.");
         if (boss != null) {
