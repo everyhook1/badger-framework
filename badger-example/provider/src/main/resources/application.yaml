@@ -4,3 +4,9 @@ rpc:
 
 zk:
   address: ${ZK_URL:127.0.0.1:2181}
+
+spring:
+  datasource:
+    url: jdbc:mysql://${MYSQL_HOST:127.0.0.1}:3306/provider
+    username: ${MYSQL_USERNAME:root}
+    password: ${MYSQL_PASSWORD:root}

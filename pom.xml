@@ -26,6 +26,7 @@
         <spring-boot.version>2.5.0</spring-boot.version>
         <hessian.version>4.0.65</hessian.version>
         <fst.version>2.57</fst.version>
+        <commons-io.version>2.10.0</commons-io.version>
         <curator.version>5.1.0</curator.version>
     </properties>
 
@@ -36,6 +37,11 @@
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-autoconfigure</artifactId>
                 <version>${spring-boot.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.springframework</groupId>
+                <artifactId>spring-test</artifactId>
+                <version>${spring.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.springframework</groupId>
@@ -109,6 +115,12 @@
                 <artifactId>curator-test</artifactId>
                 <version>${curator.version}</version>
             </dependency>
+
+            <dependency>
+                <groupId>commons-io</groupId>
+                <artifactId>commons-io</artifactId>
+                <version>${commons-io.version}</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
     <dependencies>
@@ -133,7 +145,7 @@
     <modules>
         <module>badger-core</module>
         <module>badger-example</module>
-        <module>badger-saga</module>
+        <module>badger-tcc</module>
     </modules>
 
     <build>
