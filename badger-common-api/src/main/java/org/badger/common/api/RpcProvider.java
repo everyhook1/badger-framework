@@ -1,4 +1,4 @@
-package org.badger.core.bootstrap.entity;
+package org.badger.common.api;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

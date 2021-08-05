@@ -1,4 +1,4 @@
-package org.badger.core.bootstrap.entity;
+package org.badger.common.api;
 
 /**
  * @author liubin01

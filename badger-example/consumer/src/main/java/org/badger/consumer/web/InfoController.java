@@ -1,6 +1,6 @@
 package org.badger.consumer.web;
 
-import org.badger.core.bootstrap.entity.RpcProxy;
+import org.badger.common.api.RpcProxy;
 import org.badger.example.api.UserInfo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;

@@ -1,8 +1,8 @@
 package org.badger.core.bootstrap.codec.serializer.impl;
 
+import org.badger.common.api.RpcRequest;
+import org.badger.common.api.RpcResponse;
 import org.badger.core.bootstrap.codec.serializer.RpcSerializer;
-import org.badger.core.bootstrap.entity.RpcRequest;
-import org.badger.core.bootstrap.entity.RpcResponse;
 import org.nustaq.serialization.FSTConfiguration;
 import org.nustaq.serialization.FSTObjectInput;
 import org.nustaq.serialization.FSTObjectOutput;

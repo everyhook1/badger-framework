@@ -1,6 +1,6 @@
 package org.badger.core.bootstrap;
 
-import org.badger.core.bootstrap.entity.RpcProvider;
+import org.badger.common.api.RpcProvider;
 import org.springframework.stereotype.Service;
 
 /**

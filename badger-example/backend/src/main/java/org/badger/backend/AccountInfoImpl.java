@@ -1,6 +1,6 @@
 package org.badger.backend;
 
-import org.badger.core.bootstrap.entity.RpcProvider;
+import org.badger.common.api.RpcProvider;
 import org.badger.example.api.AccountInfo;
 import org.springframework.stereotype.Service;
 

@@ -4,9 +4,9 @@ import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
 import com.esotericsoftware.kryo.pool.KryoPool;
+import org.badger.common.api.RpcRequest;
+import org.badger.common.api.RpcResponse;
 import org.badger.core.bootstrap.codec.serializer.RpcSerializer;
-import org.badger.core.bootstrap.entity.RpcRequest;
-import org.badger.core.bootstrap.entity.RpcResponse;
 
 import java.io.ByteArrayOutputStream;
 

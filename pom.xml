@@ -152,6 +152,7 @@
         <module>badger-core</module>
         <module>badger-example</module>
         <module>badger-tcc</module>
+        <module>badger-common-api</module>
     </modules>
 
     <build>

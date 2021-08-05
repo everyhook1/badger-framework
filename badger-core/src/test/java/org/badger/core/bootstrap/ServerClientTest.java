@@ -2,11 +2,11 @@ package org.badger.core.bootstrap;
 
 import com.google.common.collect.ImmutableMap;
 import lombok.extern.slf4j.Slf4j;
+import org.badger.common.api.RpcRequest;
+import org.badger.common.api.RpcResponse;
 import org.badger.core.bootstrap.codec.serializer.RpcSerializer;
 import org.badger.core.bootstrap.codec.serializer.SerializerEnum;
 import org.badger.core.bootstrap.config.NettyServerConfig;
-import org.badger.core.bootstrap.entity.RpcRequest;
-import org.badger.core.bootstrap.entity.RpcResponse;
 import org.badger.core.bootstrap.util.SnowflakeIdWorker;
 import org.junit.Assert;
 import org.junit.Test;

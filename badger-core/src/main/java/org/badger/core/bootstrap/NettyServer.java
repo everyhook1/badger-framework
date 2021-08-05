@@ -20,13 +20,13 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
+import org.badger.common.api.RpcRequest;
+import org.badger.common.api.RpcResponse;
 import org.badger.core.bootstrap.codec.RpcDecoder;
 import org.badger.core.bootstrap.codec.RpcEncoder;
 import org.badger.core.bootstrap.codec.serializer.RpcSerializer;
 import org.badger.core.bootstrap.codec.serializer.SerializerEnum;
 import org.badger.core.bootstrap.config.NettyServerConfig;
-import org.badger.core.bootstrap.entity.RpcRequest;
-import org.badger.core.bootstrap.entity.RpcResponse;
 import org.badger.core.bootstrap.handler.NettyServerHandler;
 import org.springframework.beans.factory.DisposableBean;
 

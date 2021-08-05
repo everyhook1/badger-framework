@@ -16,13 +16,13 @@ import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.timeout.IdleStateHandler;
 import lombok.extern.slf4j.Slf4j;
+import org.badger.common.api.RpcRequest;
+import org.badger.common.api.RpcResponse;
 import org.badger.core.bootstrap.codec.RpcDecoder;
 import org.badger.core.bootstrap.codec.RpcEncoder;
 import org.badger.core.bootstrap.codec.serializer.RpcSerializer;
 import org.badger.core.bootstrap.codec.serializer.SerializerEnum;
 import org.badger.core.bootstrap.entity.Peer;
-import org.badger.core.bootstrap.entity.RpcRequest;
-import org.badger.core.bootstrap.entity.RpcResponse;
 import org.badger.core.bootstrap.handler.NettyClientHandler;
 import org.springframework.beans.factory.DisposableBean;
 

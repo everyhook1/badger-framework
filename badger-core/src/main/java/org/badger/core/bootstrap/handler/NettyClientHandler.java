@@ -3,7 +3,7 @@ package org.badger.core.bootstrap.handler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import lombok.extern.slf4j.Slf4j;
-import org.badger.core.bootstrap.entity.RpcResponse;
+import org.badger.common.api.RpcResponse;
 
 import java.net.InetSocketAddress;
 import java.util.concurrent.SynchronousQueue;

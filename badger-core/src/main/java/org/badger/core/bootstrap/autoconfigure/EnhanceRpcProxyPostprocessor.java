@@ -1,11 +1,11 @@
 package org.badger.core.bootstrap.autoconfigure;
 
 import lombok.extern.slf4j.Slf4j;
+import org.badger.common.api.RpcProxy;
+import org.badger.common.api.RpcRequest;
+import org.badger.common.api.RpcResponse;
+import org.badger.common.api.SpanContext;
 import org.badger.core.bootstrap.NettyClient;
-import org.badger.core.bootstrap.entity.RpcProxy;
-import org.badger.core.bootstrap.entity.RpcRequest;
-import org.badger.core.bootstrap.entity.RpcResponse;
-import org.badger.core.bootstrap.entity.SpanContext;
 import org.badger.core.bootstrap.util.SnowflakeIdWorker;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.config.BeanFactoryPostProcessor;

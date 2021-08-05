@@ -4,10 +4,10 @@ import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import lombok.extern.slf4j.Slf4j;
+import org.badger.common.api.RpcRequest;
+import org.badger.common.api.RpcResponse;
+import org.badger.common.api.SpanContext;
 import org.badger.core.bootstrap.NettyServer;
-import org.badger.core.bootstrap.entity.SpanContext;
-import org.badger.core.bootstrap.entity.RpcRequest;
-import org.badger.core.bootstrap.entity.RpcResponse;
 
 /**
  * @author liubin01
