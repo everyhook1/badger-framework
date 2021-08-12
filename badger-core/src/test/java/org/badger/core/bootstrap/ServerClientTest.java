@@ -6,7 +6,7 @@ import org.badger.common.api.RpcRequest;
 import org.badger.common.api.RpcResponse;
 import org.badger.core.bootstrap.codec.serializer.RpcSerializer;
 import org.badger.core.bootstrap.codec.serializer.SerializerEnum;
-import org.badger.core.bootstrap.config.NettyServerConfig;
+import org.badger.core.bootstrap.config.ServerConfig;
 import org.badger.core.bootstrap.util.SnowflakeIdWorker;
 import org.junit.Assert;
 import org.junit.Test;
@@ -37,7 +37,7 @@ public class ServerClientTest {
     public void deltaWithSerializer(RpcSerializer rpcSerializer, long times) throws Throwable {
         String serviceName = "server-test";
         int serverPort = new Random().nextInt(30000);
-        NettyServerConfig config = new NettyServerConfig(serverPort, serviceName);
+        ServerConfig config = new ServerConfig(serverPort, serviceName);
         Map<String, Object> serviceMap = ImmutableMap.of("echo", new EchoImpl());
         NettyServer nettyServer = new NettyServer(config, serviceMap, new HashMap<>(), rpcSerializer);
         nettyServer.start();

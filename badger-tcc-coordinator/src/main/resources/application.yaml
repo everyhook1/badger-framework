@@ -1,11 +1,15 @@
 rpc:
-  serviceName: badger-consumer
+  serviceName: badger-tcc-coordinator
   port: 11311
+
 zk:
   address: ${ZK_URL:127.0.0.1:2181}
 
+server:
+  port: 9001
+
 spring:
   datasource:
-    url: jdbc:mysql://${MYSQL_HOST:127.0.0.1}:3306/consumer
+    url: jdbc:mysql://${MYSQL_HOST:127.0.0.1}:3306/tcc-coordinator
     username: ${MYSQL_USERNAME:root}
     password: ${MYSQL_PASSWORD:root}

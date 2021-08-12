@@ -1,6 +1,7 @@
 package org.badger.common.api;
 
 import lombok.Data;
+import org.badger.common.api.transaction.TransactionContext;
 
 import java.io.Serializable;
 
@@ -20,4 +21,5 @@ public class RpcRequest implements Serializable {
     private RpcRequest parentRpc;
     private Object rpcContext;
     private long timeout;
+    private TransactionContext transactionContext;
 }

@@ -16,8 +16,12 @@ import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.timeout.IdleStateHandler;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.curator.framework.CuratorFramework;
+import org.apache.curator.framework.recipes.cache.CuratorCache;
+import org.apache.curator.framework.recipes.cache.CuratorCacheListener;
 import org.badger.common.api.RpcRequest;
 import org.badger.common.api.RpcResponse;
+import org.badger.common.api.remote.CLIENT;
 import org.badger.core.bootstrap.codec.RpcDecoder;
 import org.badger.core.bootstrap.codec.RpcEncoder;
 import org.badger.core.bootstrap.codec.serializer.RpcSerializer;
@@ -37,9 +41,53 @@ import java.util.concurrent.TimeUnit;
  * @author liubin01
  */
 @Slf4j
-public class NettyClient implements DisposableBean {
+public class NettyClient implements DisposableBean, CLIENT {
 
     private volatile static NettyClient INSTANCE;
+
+    private CuratorFramework curatorFramework;
+
+    private final Map<String, CuratorCache> curatorCacheMap = new ConcurrentHashMap<>();
+
+    public void initServiceListener(CuratorFramework curatorFramework) {
+        this.curatorFramework = curatorFramework;
+        serviceNameSet.forEach(this::addListener);
+    }
+
+    public void addListener(String serviceName) {
+        if (curatorCacheMap.containsKey(serviceName)) {
+            log.info("curatorCacheMap {} already exists", serviceName);
+            return;
+        }
+        CuratorCache cache = CuratorCache.builder(curatorFramework, "/" + serviceName).build();
+        CuratorCacheListener listener = CuratorCacheListener
+                .builder()
+                .forPathChildrenCache("/" + serviceName, curatorFramework, (clt, event) -> {
+                    log.info("childEvent {} {}", serviceName, event);
+                    String[] splits;
+                    String host = "";
+                    int port = 0;
+                    if (event.getData() != null && event.getData().getPath() != null) {
+                        splits = event.getData().getPath().split("[/:]");
+                        host = splits[2];
+                        port = Integer.parseInt(splits[3]);
+                    }
+                    switch (event.getType()) {
+                        case CHILD_ADDED:
+                            connectChannel(serviceName, host, port);
+                            break;
+                        case CHILD_REMOVED:
+                            removeChannel(serviceName, host, port);
+                            break;
+                        default:
+                            break;
+                    }
+                })
+                .build();
+        cache.listenable().addListener(listener);
+        cache.start();
+        curatorCacheMap.put(serviceName, cache);
+    }
 
     public static NettyClient getInstance() {
         if (INSTANCE == null) {
@@ -126,10 +174,6 @@ public class NettyClient implements DisposableBean {
 
     public void setServiceNameSet(Set<String> serviceNameSet) {
         this.serviceNameSet = serviceNameSet;
-    }
-
-    public Set<String> getServiceNameSet() {
-        return serviceNameSet;
     }
 
     public void connectChannel(String serviceName, String host, int port) {

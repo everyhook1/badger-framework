@@ -11,7 +11,7 @@ import org.badger.common.api.RpcProvider;
 import org.badger.common.api.RpcProxy;
 import org.badger.core.bootstrap.autoconfigure.EnhanceRpcProxyPostprocessor;
 import org.badger.core.bootstrap.autoconfigure.ProviderConfig;
-import org.badger.core.bootstrap.config.NettyServerConfig;
+import org.badger.core.bootstrap.config.ServerConfig;
 import org.badger.core.bootstrap.config.ZkConfig;
 import org.badger.core.bootstrap.util.IpUtil;
 import org.junit.AfterClass;
@@ -45,7 +45,7 @@ import java.util.Map;
 @Configuration
 public class NettySpringTest {
 
-    private static int zkPort = 9878;
+    private static final int zkPort = 9878;
     private static TestingServer server;
     private static File zkFile;
     private static final String serviceName = "badger-test";
@@ -77,16 +77,16 @@ public class NettySpringTest {
     }
 
     @Bean
-    public NettyServerConfig nettyServerConfig() {
-        NettyServerConfig config = new NettyServerConfig();
+    public ServerConfig nettyServerConfig() {
+        ServerConfig config = new ServerConfig();
         config.setServiceName(serviceName);
         config.setPort(12345);
         return config;
     }
 
     @Bean
-    @ConditionalOnBean(value = {NettyServerConfig.class, CuratorFramework.class})
-    public NettyServer nettyServer(NettyServerConfig nettyServerConfig, CuratorFramework client) throws Throwable {
+    @ConditionalOnBean(value = {ServerConfig.class, CuratorFramework.class})
+    public NettyServer nettyServer(ServerConfig serverConfig, CuratorFramework client) throws Throwable {
         Map<String, Object> objectMap = springUtils.getApplicationContext().getBeansWithAnnotation(RpcProvider.class);
         Map<String, Object> serviceMap = new HashMap<>();
         Map<Pair<String, String>, Object> servicePairMap = new HashMap<>();
@@ -99,23 +99,23 @@ public class NettySpringTest {
                 servicePairMap.put(ImmutablePair.of(interfaceName, k), v);
             }
         });
-        NettyServer nettyServer = new NettyServer(nettyServerConfig, serviceMap, servicePairMap);
+        NettyServer nettyServer = new NettyServer(serverConfig, serviceMap, servicePairMap);
         nettyServer.start();
-        register(client, nettyServerConfig);
+        register(client, serverConfig);
         client.getConnectionStateListenable().addListener((cli, newState) -> {
             if (newState == ConnectionState.RECONNECTED) {
-                register(client, nettyServerConfig);
+                register(client, serverConfig);
             }
         });
         return nettyServer;
     }
 
-    private void register(CuratorFramework client, NettyServerConfig nettyServerConfig) {
+    private void register(CuratorFramework client, ServerConfig serverConfig) {
         try {
             client.create().creatingParentsIfNeeded().withMode(CreateMode.EPHEMERAL)
-                    .forPath(String.format("/%s/%s:%s", nettyServerConfig.getServiceName(), IpUtil.getIpAddress(), nettyServerConfig.getPort()));
+                    .forPath(String.format("/%s/%s:%s", serverConfig.getServiceName(), IpUtil.getIpAddress(), serverConfig.getPort()));
         } catch (Exception e) {
-            log.error("register error {} ,{}", client, nettyServerConfig, e);
+            log.error("register error {} ,{}", client, serverConfig, e);
         }
     }
 

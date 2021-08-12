@@ -6,15 +6,14 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.apache.curator.RetryPolicy;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
-import org.apache.curator.framework.recipes.cache.CuratorCache;
-import org.apache.curator.framework.recipes.cache.CuratorCacheListener;
 import org.apache.curator.framework.state.ConnectionState;
 import org.apache.curator.retry.ExponentialBackoffRetry;
 import org.apache.zookeeper.CreateMode;
 import org.badger.common.api.RpcProvider;
+import org.badger.common.api.remote.CLIENT;
 import org.badger.core.bootstrap.NettyClient;
 import org.badger.core.bootstrap.NettyServer;
-import org.badger.core.bootstrap.config.NettyServerConfig;
+import org.badger.core.bootstrap.config.ServerConfig;
 import org.badger.core.bootstrap.config.ZkConfig;
 import org.badger.core.bootstrap.util.IpUtil;
 import org.springframework.beans.BeansException;
@@ -29,7 +28,6 @@ import org.springframework.context.annotation.Configuration;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * @author liubin01
@@ -44,8 +42,8 @@ public class ProviderConfig implements ApplicationContextAware {
     @Bean
     @ConditionalOnProperty(value = "rpc.serviceName")
     @ConfigurationProperties(prefix = "rpc")
-    public NettyServerConfig nettyServerConfig() {
-        return new NettyServerConfig();
+    public ServerConfig nettyServerConfig() {
+        return new ServerConfig();
     }
 
 
@@ -71,44 +69,15 @@ public class ProviderConfig implements ApplicationContextAware {
 
     @Bean
     @ConditionalOnBean(CuratorFramework.class)
-    public NettyClient nettyClient(CuratorFramework client) {
+    public CLIENT nettyClient(CuratorFramework client) {
         NettyClient nettyClient = NettyClient.getInstance();
-        Set<String> serviceNameSet = nettyClient.getServiceNameSet();
-        for (String serviceName : serviceNameSet) {
-            CuratorCache cache = CuratorCache.builder(client, "/" + serviceName).build();
-            CuratorCacheListener listener = CuratorCacheListener
-                    .builder()
-                    .forPathChildrenCache("/" + serviceName, client, (clt, event) -> {
-                        log.info("childEvent {} {}", serviceName, event);
-                        String[] splits;
-                        String host = "";
-                        int port = 0;
-                        if (event.getData() != null && event.getData().getPath() != null) {
-                            splits = event.getData().getPath().split("[/:]");
-                            host = splits[2];
-                            port = Integer.parseInt(splits[3]);
-                        }
-                        switch (event.getType()) {
-                            case CHILD_ADDED:
-                                nettyClient.connectChannel(serviceName, host, port);
-                                break;
-                            case CHILD_REMOVED:
-                                nettyClient.removeChannel(serviceName, host, port);
-                                break;
-                            default:
-                                break;
-                        }
-                    })
-                    .build();
-            cache.listenable().addListener(listener);
-            cache.start();
-        }
+        nettyClient.initServiceListener(client);
         return nettyClient;
     }
 
     @Bean
-    @ConditionalOnBean(value = {NettyServerConfig.class, CuratorFramework.class})
-    public NettyServer nettyServer(NettyServerConfig nettyServerConfig, CuratorFramework client) throws Throwable {
+    @ConditionalOnBean(value = {ServerConfig.class, CuratorFramework.class})
+    public NettyServer nettyServer(ServerConfig serverConfig, CuratorFramework client) throws Throwable {
         Map<String, Object> objectMap = applicationContext.getBeansWithAnnotation(RpcProvider.class);
         Map<String, Object> serviceMap = new HashMap<>();
         Map<Pair<String, String>, Object> servicePairMap = new HashMap<>();
@@ -121,18 +90,18 @@ public class ProviderConfig implements ApplicationContextAware {
                 servicePairMap.put(ImmutablePair.of(interfaceName, k), v);
             }
         });
-        NettyServer nettyServer = new NettyServer(nettyServerConfig, serviceMap, servicePairMap);
+        NettyServer nettyServer = new NettyServer(serverConfig, serviceMap, servicePairMap);
         nettyServer.start();
-        register(client, nettyServerConfig);
+        register(client, serverConfig);
         client.getConnectionStateListenable().addListener((cli, newState) -> {
             if (newState == ConnectionState.RECONNECTED) {
-                register(client, nettyServerConfig);
+                register(client, serverConfig);
             }
         });
         return nettyServer;
     }
 
-    private void register(CuratorFramework client, NettyServerConfig nettyServerConfig) {
+    private void register(CuratorFramework client, ServerConfig nettyServerConfig) {
         try {
             client.create().creatingParentsIfNeeded().withMode(CreateMode.EPHEMERAL)
                     .forPath(String.format("/%s/%s:%s", nettyServerConfig.getServiceName(), IpUtil.getIpAddress(), nettyServerConfig.getPort()));

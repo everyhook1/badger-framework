@@ -26,7 +26,7 @@ import org.badger.core.bootstrap.codec.RpcDecoder;
 import org.badger.core.bootstrap.codec.RpcEncoder;
 import org.badger.core.bootstrap.codec.serializer.RpcSerializer;
 import org.badger.core.bootstrap.codec.serializer.SerializerEnum;
-import org.badger.core.bootstrap.config.NettyServerConfig;
+import org.badger.core.bootstrap.config.ServerConfig;
 import org.badger.core.bootstrap.handler.NettyServerHandler;
 import org.springframework.beans.factory.DisposableBean;
 
@@ -44,7 +44,7 @@ public class NettyServer implements DisposableBean {
 
     private EventLoopGroup worker;
 
-    private final NettyServerConfig config;
+    private final ServerConfig config;
 
     private final AtomicBoolean started = new AtomicBoolean();
 
@@ -54,12 +54,12 @@ public class NettyServer implements DisposableBean {
     private final Map<Pair<String, String>, Object> servicePairMap;
     private final RpcSerializer rpcSerializer;
 
-    public NettyServer(NettyServerConfig config, Map<String, Object> serviceMap,
+    public NettyServer(ServerConfig config, Map<String, Object> serviceMap,
                        Map<Pair<String, String>, Object> servicePairMap) {
         this(config, serviceMap, servicePairMap, SerializerEnum.DEFAULT());
     }
 
-    public NettyServer(NettyServerConfig config, Map<String, Object> serviceMap,
+    public NettyServer(ServerConfig config, Map<String, Object> serviceMap,
                        Map<Pair<String, String>, Object> servicePairMap, RpcSerializer rpcSerializer) {
         this.config = config;
         this.serviceMap = serviceMap;

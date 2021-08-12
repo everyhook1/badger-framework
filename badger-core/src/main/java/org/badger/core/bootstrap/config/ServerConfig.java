@@ -10,7 +10,7 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class NettyServerConfig {
+public class ServerConfig {
 
     public static final int DEFAULT_PORT = 11311;
 
