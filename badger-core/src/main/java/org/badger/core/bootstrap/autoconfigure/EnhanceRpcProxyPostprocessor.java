@@ -18,9 +18,11 @@ import org.springframework.core.type.classreading.MetadataReader;
 import org.springframework.core.type.classreading.SimpleMetadataReaderFactory;
 import org.springframework.stereotype.Component;
 
+import java.io.IOException;
 import java.lang.reflect.Field;
 import java.lang.reflect.Proxy;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -36,6 +38,8 @@ public class EnhanceRpcProxyPostprocessor implements BeanFactoryPostProcessor, A
 
     public static final NettyClient nettyClient = NettyClient.getInstance();
 
+    private static final String BADGER_BASE_PACKAGE = "org/badger/";
+
     private String getBasePackage() {
         Map<String, Object> map = applicationContext.getBeansWithAnnotation(SpringBootApplication.class);
         for (Map.Entry<String, Object> entry : map.entrySet()) {
@@ -43,15 +47,25 @@ public class EnhanceRpcProxyPostprocessor implements BeanFactoryPostProcessor, A
             String n = v.getClass().getPackage().getName();
             return n.replace(".", "/") + "/";
         }
-        return "org/badger/";
+        return BADGER_BASE_PACKAGE;
+    }
+
+    private Set<Resource> scanPackage(String... packages) throws IOException {
+        Set<String> packageSet = new HashSet<>();
+        Collections.addAll(packageSet, packages);
+        Set<Resource> resourceSet = new HashSet<>();
+        for (String s : packageSet) {
+            String packageSearchPath = "classpath*:" + s + "**/*.class";
+            Resource[] resources = applicationContext.getResources(packageSearchPath);
+            Collections.addAll(resourceSet, resources);
+        }
+        return resourceSet;
     }
 
     @Override
     public void postProcessBeanFactory(ConfigurableListableBeanFactory beanFactory) throws BeansException {
         try {
-            String packageSearchPath = "classpath*:" + getBasePackage() + "**/*.class";
-            Resource[] resources =
-                    applicationContext.getResources(packageSearchPath);
+            Set<Resource> resources = scanPackage(getBasePackage(), BADGER_BASE_PACKAGE);
             SimpleMetadataReaderFactory factory = new
                     SimpleMetadataReaderFactory(applicationContext);
             ClassLoader loader = Thread.currentThread().getContextClassLoader();

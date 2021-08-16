@@ -1,6 +1,6 @@
 rpc:
   serviceName: badger-tcc-coordinator
-  port: 11311
+  port: 11411
 
 zk:
   address: ${ZK_URL:127.0.0.1:2181}

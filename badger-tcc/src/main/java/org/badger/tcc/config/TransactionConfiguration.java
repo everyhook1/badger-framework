@@ -6,25 +6,28 @@
  */
 package org.badger.tcc.config;
 
-import org.badger.common.api.RpcRequest;
-import org.badger.common.api.RpcResponse;
-import org.badger.common.api.SpanContext;
+import org.badger.common.api.RpcProxy;
 import org.badger.common.api.remote.CLIENT;
 import org.badger.tcc.TransactionManager;
+import org.badger.tcc.aspect.CompensableAspect;
 import org.badger.tcc.spring.CompensableManager;
 import org.badger.tcc.spring.TransactionCoordinator;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-
-import java.lang.reflect.Proxy;
-import java.util.Arrays;
 
 /**
  * @author liubin01
  */
 @Configuration
+@ConditionalOnProperty(value = "tcc.enabled", havingValue = "true")
 public class TransactionConfiguration {
+
+    @Autowired
+    @RpcProxy(serviceName = "badger-tcc-coordinator")
+    private TransactionCoordinator transactionCoordinator;
 
     @Bean
     @ConditionalOnBean(CLIENT.class)
@@ -33,38 +36,19 @@ public class TransactionConfiguration {
     }
 
     @Bean
-    @ConditionalOnBean(CLIENT.class)
-    public TransactionCoordinator transactionCoordinator(CLIENT client) {
-        String coordinatorServiceName = "badger-tcc-coordinator";
-        client.addListener(coordinatorServiceName);
-        Class<?> clazz = TransactionCoordinator.class;
-        return (TransactionCoordinator) Proxy.newProxyInstance(clazz.getClassLoader(), new Class[]{clazz},
-                (proxy, method, args) -> {
-                    if (Arrays.stream(clazz.getDeclaredMethods()).noneMatch(m -> m.getName().equals(method.getName()))) {
-                        return null;
-                    }
-                    RpcRequest request = new RpcRequest();
-                    request.setClzName(clazz.getSimpleName());
-                    request.setMethod(method.getName());
-                    request.setServiceName(coordinatorServiceName);
-                    request.setArgs(args);
-                    request.setArgTypes(method.getParameterTypes());
-//                    request.setSeqId(SnowflakeIdWorker.getId());
-                    request.setParentRpc(SpanContext.getCurRequest());
-                    RpcResponse response = (RpcResponse) client.send(request);
-                    if (response.getCode() == 500) {
-                        throw new Exception(response.getErrMsg());
-                    }
-                    return response.getBody();
-                });
-    }
-
-    @Bean
-    @ConditionalOnBean(value = {TransactionCoordinator.class, CompensableManager.class})
-    public TransactionManager transactionManager(TransactionCoordinator transactionCoordinator, CompensableManager compensableManager) {
+    @ConditionalOnBean(value = {CompensableManager.class})
+    public TransactionManager tccTransactionManager(CompensableManager compensableManager) {
         TransactionManager transactionManager = new TransactionManager();
         transactionManager.setTransactionCoordinator(transactionCoordinator);
         transactionManager.setCompensableManager(compensableManager);
         return transactionManager;
+    }
+
+    @Bean
+    @ConditionalOnBean(value = {TransactionManager.class})
+    public CompensableAspect compensableAspect(TransactionManager transactionManager) {
+        CompensableAspect compensableAspect = new CompensableAspect();
+        compensableAspect.setTransactionManager(transactionManager);
+        return compensableAspect;
     }
 }

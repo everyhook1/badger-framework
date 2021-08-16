@@ -6,6 +6,7 @@
  */
 package org.badger.tcc.aspect;
 
+import lombok.extern.slf4j.Slf4j;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
@@ -16,8 +17,9 @@ import org.badger.tcc.entity.Transaction;
 /**
  * @author liubin01
  */
+@Slf4j
 @Aspect
-public abstract class CompensableAspect {
+public class CompensableAspect {
 
     private TransactionManager transactionManager;
 
@@ -32,6 +34,7 @@ public abstract class CompensableAspect {
 
     @Around("compensableService()")
     public Object interceptCompensableMethod(ProceedingJoinPoint jp) throws Throwable {
+        log.info("start aspect");
         Transaction transaction = transactionManager.begin(jp);
         Object returnValue = null;
         try {
@@ -42,6 +45,7 @@ public abstract class CompensableAspect {
             transactionManager.cleanAfterCompletion(transaction);
         }
         transactionManager.commit(transaction);
+        log.info("end aspect");
         return returnValue;
     }
 }
