@@ -1,26 +1,18 @@
 package org.badger.core.bootstrap;
 
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.tuple.ImmutablePair;
-import org.apache.commons.lang3.tuple.Pair;
-import org.apache.curator.framework.CuratorFramework;
-import org.apache.curator.framework.state.ConnectionState;
 import org.apache.curator.test.TestingServer;
-import org.apache.zookeeper.CreateMode;
-import org.badger.common.api.RpcProvider;
 import org.badger.common.api.RpcProxy;
 import org.badger.core.bootstrap.autoconfigure.EnhanceRpcProxyPostprocessor;
 import org.badger.core.bootstrap.autoconfigure.ProviderConfig;
 import org.badger.core.bootstrap.config.ServerConfig;
 import org.badger.core.bootstrap.config.ZkConfig;
-import org.badger.core.bootstrap.util.IpUtil;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.test.context.ContextConfiguration;
@@ -29,8 +21,6 @@ import org.springframework.test.context.junit4.SpringRunner;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Method;
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * @author liubin01
@@ -55,6 +45,9 @@ public class NettySpringTest {
         zkFile = new File("./zkData");
         server = new TestingServer(zkPort, zkFile);
         server.start();
+        System.setProperty("rpc.serviceName", serviceName);
+        System.setProperty("rpc.port", "12345");
+        System.setProperty("zk.address", "127.0.0.1:" + zkPort);
     }
 
     @AfterClass
@@ -84,45 +77,11 @@ public class NettySpringTest {
         return config;
     }
 
-    @Bean
-    @ConditionalOnBean(value = {ServerConfig.class, CuratorFramework.class})
-    public NettyServer nettyServer(ServerConfig serverConfig, CuratorFramework client) throws Throwable {
-        Map<String, Object> objectMap = springUtils.getApplicationContext().getBeansWithAnnotation(RpcProvider.class);
-        Map<String, Object> serviceMap = new HashMap<>();
-        Map<Pair<String, String>, Object> servicePairMap = new HashMap<>();
-        objectMap.forEach((k, v) -> {
-            Class<?> clazz = v.getClass();
-            Class<?>[] interfaces = clazz.getInterfaces();
-            for (Class<?> inter : interfaces) {
-                String interfaceName = inter.getSimpleName();
-                serviceMap.put(interfaceName, v);
-                servicePairMap.put(ImmutablePair.of(interfaceName, k), v);
-            }
-        });
-        NettyServer nettyServer = new NettyServer(serverConfig, serviceMap, servicePairMap);
-        nettyServer.start();
-        register(client, serverConfig);
-        client.getConnectionStateListenable().addListener((cli, newState) -> {
-            if (newState == ConnectionState.RECONNECTED) {
-                register(client, serverConfig);
-            }
-        });
-        return nettyServer;
-    }
-
-    private void register(CuratorFramework client, ServerConfig serverConfig) {
-        try {
-            client.create().creatingParentsIfNeeded().withMode(CreateMode.EPHEMERAL)
-                    .forPath(String.format("/%s/%s:%s", serverConfig.getServiceName(), IpUtil.getIpAddress(), serverConfig.getPort()));
-        } catch (Exception e) {
-            log.error("register error {} ,{}", client, serverConfig, e);
-        }
-    }
-
     @Test
     public void testSelfInvoke() throws Exception {
         Object obj = springUtils.getApplicationContext().getBean("org.badger.core.bootstrap.Echo");
         Method m = Echo.class.getDeclaredMethods()[0];
+        Thread.sleep(1000);
         Object res = m.invoke(obj, 234, 234);
         Assert.assertTrue(res instanceof Integer);
         Assert.assertEquals(res, 234 * 234);
