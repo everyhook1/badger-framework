@@ -10,7 +10,9 @@ import org.apache.curator.framework.state.ConnectionState;
 import org.apache.curator.retry.ExponentialBackoffRetry;
 import org.apache.zookeeper.CreateMode;
 import org.badger.common.api.RpcProvider;
+import org.badger.common.api.SpanContext;
 import org.badger.common.api.remote.CLIENT;
+import org.badger.common.api.remote.SERVER;
 import org.badger.core.bootstrap.NettyClient;
 import org.badger.core.bootstrap.NettyServer;
 import org.badger.core.bootstrap.config.ServerConfig;
@@ -68,8 +70,9 @@ public class ProviderConfig implements ApplicationContextAware {
     }
 
     @Bean
-    @ConditionalOnBean(CuratorFramework.class)
-    public CLIENT nettyClient(CuratorFramework client) {
+    @ConditionalOnBean(value = {ServerConfig.class, CuratorFramework.class})
+    public CLIENT nettyClient(ServerConfig serverConfig, CuratorFramework client) {
+        SpanContext.setServiceName(serverConfig.getServiceName());
         NettyClient nettyClient = NettyClient.getInstance();
         nettyClient.initServiceListener(client);
         return nettyClient;
@@ -77,7 +80,7 @@ public class ProviderConfig implements ApplicationContextAware {
 
     @Bean
     @ConditionalOnBean(value = {ServerConfig.class, CuratorFramework.class})
-    public NettyServer nettyServer(ServerConfig serverConfig, CuratorFramework client) throws Throwable {
+    public SERVER nettyServer(ServerConfig serverConfig, CuratorFramework client) throws Throwable {
         Map<String, Object> objectMap = applicationContext.getBeansWithAnnotation(RpcProvider.class);
         Map<String, Object> serviceMap = new HashMap<>();
         Map<Pair<String, String>, Object> servicePairMap = new HashMap<>();

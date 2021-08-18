@@ -8,6 +8,7 @@ package org.badger.tcc;
 
 
 import lombok.Data;
+import lombok.extern.slf4j.Slf4j;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.reflect.MethodSignature;
 import org.badger.common.api.SpanContext;
@@ -16,16 +17,19 @@ import org.badger.common.api.transaction.TransactionContext;
 import org.badger.common.api.transaction.TransactionRoles;
 import org.badger.tcc.entity.CompensableEnum;
 import org.badger.tcc.entity.CompensableIdentifier;
-import org.badger.tcc.entity.Participant;
-import org.badger.tcc.entity.Transaction;
+import org.badger.tcc.entity.ParticipantDTO;
+import org.badger.tcc.entity.ParticipantStatus;
+import org.badger.tcc.entity.TransactionDTO;
 import org.badger.tcc.spring.CompensableManager;
 import org.badger.tcc.spring.TransactionCoordinator;
 
+import java.io.IOException;
 import java.lang.reflect.Method;
 
 /**
  * @author liubin01
  */
+@Slf4j
 @Data
 public class TransactionManager {
 
@@ -33,15 +37,16 @@ public class TransactionManager {
 
     private CompensableManager compensableManager;
 
-    public Transaction begin(ProceedingJoinPoint jp) {
+    public Transaction begin(ProceedingJoinPoint jp) throws IOException {
         Transaction transaction;
         TransactionContext context = SpanContext.getTransactionContext();
+        log.debug("context {}", context);
         if (context == null) {
             context = TransactionContext.init();
             transaction = new Transaction(context.getRootId());
             SpanContext.setTransactionContext(context);
         } else {
-            transaction = transactionCoordinator.getTransaction(context.getRootId());
+            transaction = transactionCoordinator.getTransaction(new String(context.getRootId().getGlobalTransactionId())).toTransaction();
         }
 
         Method method = ((MethodSignature) (jp.getSignature())).getMethod();
@@ -54,13 +59,15 @@ public class TransactionManager {
         if (participant == null) {
             participant = new Participant();
             participant.setArgs(jp.getArgs());
+            participant.setClient(compensableManager.getRemoteClient());
             participant.setCompensableIdentifier(compensableIdentifier);
             participant.setTransactionContext(SpanContext.getTransactionContext());
+            participant.setParticipantStatus(ParticipantStatus.BEGIN);
             transaction.addParticipant(participant);
         }
         transaction.setCurrentParticipant(participant);
         transaction.setCompensableEnum(compensableEnum);
-        transactionCoordinator.update(transaction);
+        transactionCoordinator.update(new TransactionDTO(transaction));
         return transaction;
     }
 
@@ -69,7 +76,7 @@ public class TransactionManager {
                 && SpanContext.getTransactionContext().getRoles() == TransactionRoles.LEADER) {
             transaction.commit();
         }
-        transactionCoordinator.update(transaction.getCurrentParticipant());
+        transactionCoordinator.update(new ParticipantDTO(transaction.getCurrentParticipant()));
     }
 
     public void rollback(Transaction transaction) {
@@ -77,7 +84,7 @@ public class TransactionManager {
                 && SpanContext.getTransactionContext().getRoles() == TransactionRoles.LEADER) {
             transaction.rollback();
         }
-        transactionCoordinator.update(transaction.getCurrentParticipant());
+        transactionCoordinator.update(new ParticipantDTO(transaction.getCurrentParticipant()));
     }
 
     public void cleanAfterCompletion(Transaction transaction) {

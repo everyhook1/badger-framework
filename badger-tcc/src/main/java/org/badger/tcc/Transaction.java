@@ -4,10 +4,13 @@
  * Copyright 2021 fenbi.com. All rights reserved.
  * FENBI.COM PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
  */
-package org.badger.tcc.entity;
+package org.badger.tcc;
 
 import lombok.Data;
 import org.badger.common.api.transaction.TransactionXid;
+import org.badger.tcc.entity.CompensableEnum;
+import org.badger.tcc.entity.TransactionStatus;
+import org.springframework.util.CollectionUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -25,6 +28,8 @@ public class Transaction {
     private Participant currentParticipant;
 
     private CompensableEnum compensableEnum;
+
+    private TransactionStatus transactionStatus;
 
     public void addParticipant(Participant participant) {
         if (participants == null) {
@@ -46,15 +51,24 @@ public class Transaction {
     }
 
     public Participant getParticipant(String identifier) {
+        if (CollectionUtils.isEmpty(participants)) {
+            return null;
+        }
         return participants.stream().filter(o -> o.getCompensableIdentifier().getIdentifier().equals(identifier)).findFirst().orElseThrow(RuntimeException::new);
     }
 
     public void commit() {
-
+        if (CollectionUtils.isEmpty(participants)) {
+            return;
+        }
+        participants.forEach(Participant::commit);
     }
 
     public void rollback() {
-
+        if (CollectionUtils.isEmpty(participants)) {
+            return;
+        }
+        participants.forEach(Participant::rollback);
     }
 
     public void cleanAfterCompletion() {

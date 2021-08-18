@@ -10,4 +10,27 @@ package org.badger.tcc.entity;
  * @author liubin01
  */
 public enum ParticipantStatus {
+
+    UNKNOWN(0),
+    BEGIN(1),
+    B(2),
+    ;
+    int value;
+
+    ParticipantStatus(int value) {
+        this.value = value;
+    }
+
+    public int toInt() {
+        return value;
+    }
+
+    public ParticipantStatus fromInt(int value) {
+        for (ParticipantStatus participantStatus : ParticipantStatus.values()) {
+            if (participantStatus.value == value) {
+                return participantStatus;
+            }
+        }
+        throw new IllegalArgumentException();
+    }
 }

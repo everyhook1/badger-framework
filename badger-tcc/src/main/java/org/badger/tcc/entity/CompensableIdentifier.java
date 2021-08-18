@@ -8,14 +8,21 @@ package org.badger.tcc.entity;
 
 import lombok.Data;
 
+import java.lang.reflect.Method;
+
 /**
  * @author liubin01
  */
 @Data
 public class CompensableIdentifier {
     private String serviceName;
-    private Class<?> clz;
+    private String clzName;
+    private Object bean;
+    private String beanName;
     private String identifier;
+    private Method tryM;
+    private Method cancelM;
+    private Method confirmM;
     private String tryMethod;
     private String cancelMethod;
     private String confirmMethod;

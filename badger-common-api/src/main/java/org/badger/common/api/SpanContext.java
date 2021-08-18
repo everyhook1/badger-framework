@@ -7,6 +7,9 @@ import org.badger.common.api.transaction.TransactionContext;
  */
 public class SpanContext {
 
+    private static String SERVICE_NAME;
+
+
     private static final ThreadLocal<RpcRequest> curRequest = new InheritableThreadLocal<>();
 
     private static final ThreadLocal<TransactionContext> tc = new InheritableThreadLocal<>();
@@ -33,5 +36,13 @@ public class SpanContext {
 
     public static void removeTransactionContext() {
         tc.remove();
+    }
+
+    public static String getServiceName() {
+        return SERVICE_NAME;
+    }
+
+    public static void setServiceName(String serviceName) {
+        SERVICE_NAME = serviceName;
     }
 }

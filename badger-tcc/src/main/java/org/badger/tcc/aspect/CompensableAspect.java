@@ -11,8 +11,8 @@ import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.annotation.Pointcut;
+import org.badger.tcc.Transaction;
 import org.badger.tcc.TransactionManager;
-import org.badger.tcc.entity.Transaction;
 
 /**
  * @author liubin01
@@ -36,15 +36,18 @@ public class CompensableAspect {
     public Object interceptCompensableMethod(ProceedingJoinPoint jp) throws Throwable {
         log.info("start aspect");
         Transaction transaction = transactionManager.begin(jp);
-        Object returnValue = null;
+        Object returnValue;
         try {
-            returnValue = jp.proceed(jp.getArgs());
-        } catch (Exception e) {
-            transactionManager.rollback(transaction);
+            try {
+                returnValue = jp.proceed(jp.getArgs());
+            } catch (Throwable e) {
+                transactionManager.rollback(transaction);
+                throw e;
+            }
+            transactionManager.commit(transaction);
         } finally {
             transactionManager.cleanAfterCompletion(transaction);
         }
-        transactionManager.commit(transaction);
         log.info("end aspect");
         return returnValue;
     }

@@ -10,6 +10,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.badger.common.api.remote.CLIENT;
+import org.badger.common.api.remote.SERVER;
 import org.badger.common.api.transaction.Compensable;
 import org.badger.tcc.entity.CompensableIdentifier;
 import org.springframework.beans.BeansException;
@@ -40,12 +41,19 @@ public class CompensableManager implements InstantiationAwareBeanPostProcessor {
 
     private CLIENT remoteClient;
 
+    private SERVER server;
+
+    public CLIENT getRemoteClient() {
+        return remoteClient;
+    }
+
     public CompensableManager() {
 
     }
 
-    public CompensableManager(CLIENT remoteClient) {
+    public CompensableManager(CLIENT remoteClient, SERVER server) {
         this.remoteClient = remoteClient;
+        this.server = server;
     }
 
     public static boolean equals(Class<?>[] a, Class<?>[] a2) {
@@ -81,12 +89,11 @@ public class CompensableManager implements InstantiationAwareBeanPostProcessor {
                 methodMap.get(identifier).add(new ImmutablePair<>(compensable, method));
             }
         });
-
+        methodMap.values().removeIf(list -> list.size() != 3);
+        if (methodMap.size() != 0) {
+            server.addBean(beanName, bean);
+        }
         methodMap.forEach((identifier, list) -> {
-            if (list.size() != 3) {
-                log.error("Compensable {} is not completeness", identifier);
-                return;
-            }
             Compensable c0 = list.get(0).getKey();
             Class<?>[] p0 = list.get(0).getValue().getParameterTypes();
             for (int i = 1; i < 3; i++) {
@@ -118,12 +125,24 @@ public class CompensableManager implements InstantiationAwareBeanPostProcessor {
             }
             CompensableIdentifier compensableIdentifier = new CompensableIdentifier();
             compensableIdentifier.setIdentifier(identifier);
-            compensableIdentifier.setClz(bean.getClass());
+            compensableIdentifier.setClzName(bean.getClass().getName());
+            compensableIdentifier.setBean(bean);
+            compensableIdentifier.setBeanName(beanName);
             compensableIdentifier.setTryMethod(c0.tryMethod());
             compensableIdentifier.setConfirmMethod(c0.confirmMethod());
             compensableIdentifier.setCancelMethod(c0.cancelMethod());
             compensableIdentifier.setParameterTypes(p0);
             compensableIdentifier.setServiceName(serviceName);
+            for (Pair<Compensable, Method> pair : list) {
+                Method method = pair.getValue();
+                if (method.getName().equals(compensableIdentifier.getTryMethod())) {
+                    compensableIdentifier.setTryM(method);
+                } else if (method.getName().equals(compensableIdentifier.getConfirmMethod())) {
+                    compensableIdentifier.setConfirmM(method);
+                } else if (method.getName().equals(compensableIdentifier.getCancelMethod())) {
+                    compensableIdentifier.setCancelM(method);
+                }
+            }
             compensableIdentifierMap.put(identifier, compensableIdentifier);
         });
 

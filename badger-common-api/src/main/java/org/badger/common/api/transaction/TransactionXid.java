@@ -20,6 +20,11 @@ public class TransactionXid implements Xid, Serializable {
     private byte[] globalTransactionId;
     private byte[] branchQualifier;
 
+    public TransactionXid(String gid, String bid) {
+        globalTransactionId = gid.getBytes();
+        branchQualifier = bid.getBytes();
+    }
+
     public TransactionXid() {
         globalTransactionId = uuidToByteArray(UUID.randomUUID());
         branchQualifier = uuidToByteArray(UUID.randomUUID());

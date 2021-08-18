@@ -8,6 +8,7 @@ package org.badger.tcc.config;
 
 import org.badger.common.api.RpcProxy;
 import org.badger.common.api.remote.CLIENT;
+import org.badger.common.api.remote.SERVER;
 import org.badger.tcc.TransactionManager;
 import org.badger.tcc.aspect.CompensableAspect;
 import org.badger.tcc.spring.CompensableManager;
@@ -30,9 +31,9 @@ public class TransactionConfiguration {
     private TransactionCoordinator transactionCoordinator;
 
     @Bean
-    @ConditionalOnBean(CLIENT.class)
-    public CompensableManager compensableManager(CLIENT client) {
-        return new CompensableManager(client);
+    @ConditionalOnBean(value = {CLIENT.class, SERVER.class})
+    public CompensableManager compensableManager(CLIENT client, SERVER server) {
+        return new CompensableManager(client, server);
     }
 
     @Bean

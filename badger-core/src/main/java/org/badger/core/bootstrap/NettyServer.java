@@ -22,6 +22,7 @@ import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.badger.common.api.RpcRequest;
 import org.badger.common.api.RpcResponse;
+import org.badger.common.api.remote.SERVER;
 import org.badger.core.bootstrap.codec.RpcDecoder;
 import org.badger.core.bootstrap.codec.RpcEncoder;
 import org.badger.core.bootstrap.codec.serializer.RpcSerializer;
@@ -38,7 +39,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * @author liubin01
  */
 @Slf4j
-public class NettyServer implements DisposableBean {
+public class NettyServer implements DisposableBean, SERVER {
 
     private EventLoopGroup boss;
 
@@ -150,5 +151,10 @@ public class NettyServer implements DisposableBean {
             worker.shutdownGracefully();
         }
         channel.close();
+    }
+
+    @Override
+    public void addBean(String beanName, Object bean) {
+        serviceMap.put(beanName, bean);
     }
 }

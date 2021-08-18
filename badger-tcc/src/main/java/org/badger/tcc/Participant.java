@@ -4,17 +4,24 @@
  * Copyright 2021 fenbi.com. All rights reserved.
  * FENBI.COM PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
  */
-package org.badger.tcc.entity;
+package org.badger.tcc;
 
 import lombok.Data;
+import lombok.extern.slf4j.Slf4j;
 import org.badger.common.api.RpcRequest;
+import org.badger.common.api.SpanContext;
 import org.badger.common.api.remote.CLIENT;
 import org.badger.common.api.transaction.TransactionContext;
+import org.badger.tcc.entity.CompensableIdentifier;
+import org.badger.tcc.entity.ParticipantStatus;
+
+import java.lang.reflect.InvocationTargetException;
 
 /**
  * @author liubin01
  */
 @Data
+@Slf4j
 public class Participant {
 
     private CLIENT client;
@@ -27,7 +34,25 @@ public class Participant {
 
     private TransactionContext transactionContext;
 
+    private int version;
+
     public void updateRegister() {
+
+    }
+
+    public void commit() {
+        if (compensableIdentifier.getServiceName().equals(SpanContext.getServiceName())) {
+            try {
+                compensableIdentifier.getConfirmM().invoke(compensableIdentifier.getBean(), args);
+            } catch (IllegalAccessException | InvocationTargetException e) {
+                log.error("commit error", e);
+            }
+        } else {
+
+        }
+    }
+
+    public void rollback() {
 
     }
 

@@ -1,17 +1,18 @@
 package org.badger.tcc.spring;
 
-import org.badger.common.api.transaction.TransactionXid;
-import org.badger.tcc.entity.Participant;
-import org.badger.tcc.entity.Transaction;
+import org.badger.tcc.entity.ParticipantDTO;
+import org.badger.tcc.entity.TransactionDTO;
 
 /**
  * @author liubin01
  */
 public interface TransactionCoordinator {
 
-    Transaction getTransaction(TransactionXid rootId);
+    TransactionDTO getTransaction(String gxid);
 
-    void update(Transaction transaction);
+    void update(TransactionDTO transactionDTO);
 
-    void update(Participant participant);
+    void update(ParticipantDTO participantDTO);
+
+    void clean(String gxid);
 }
