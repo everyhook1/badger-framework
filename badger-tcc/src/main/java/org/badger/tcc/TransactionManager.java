@@ -1,9 +1,4 @@
-/**
- * @(#)TransactionManager.java, 8月 05, 2021.
- * <p>
- * Copyright 2021 fenbi.com. All rights reserved.
- * FENBI.COM PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
- */
+
 package org.badger.tcc;
 
 
@@ -11,6 +6,7 @@ import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.reflect.MethodSignature;
+import org.badger.common.api.RpcRequest;
 import org.badger.common.api.SpanContext;
 import org.badger.common.api.transaction.Compensable;
 import org.badger.common.api.transaction.TransactionContext;
@@ -23,7 +19,6 @@ import org.badger.tcc.entity.TransactionDTO;
 import org.badger.tcc.spring.CompensableManager;
 import org.badger.tcc.spring.TransactionCoordinator;
 
-import java.io.IOException;
 import java.lang.reflect.Method;
 
 /**
@@ -37,11 +32,16 @@ public class TransactionManager {
 
     private CompensableManager compensableManager;
 
-    public Transaction begin(ProceedingJoinPoint jp) throws IOException {
+    public Transaction begin(ProceedingJoinPoint jp) {
         Transaction transaction;
         TransactionContext context = SpanContext.getTransactionContext();
+        RpcRequest request = SpanContext.getCurRequest();
         log.debug("context {}", context);
-        if (context == null) {
+        if (context == null && request != null && request.getTransactionContext() != null) {
+            TransactionContext last = request.getTransactionContext();
+            context = TransactionContext.newBranch(last);
+            transaction = transactionCoordinator.getTransaction(new String(context.getRootId().getGlobalTransactionId())).toTransaction();
+        } else if (context == null) {
             context = TransactionContext.init();
             transaction = new Transaction(context.getRootId());
             SpanContext.setTransactionContext(context);
@@ -53,38 +53,60 @@ public class TransactionManager {
         Compensable compensable = method.getAnnotation(Compensable.class);
         String identifier = compensable.identifier();
         CompensableIdentifier compensableIdentifier = compensableManager.getIdentifier(identifier);
-
+        compensableIdentifier.setArgs(jp.getArgs());
         CompensableEnum compensableEnum = compensableIdentifier.getCompensableEnum(method.getName());
         Participant participant = transaction.getParticipant(identifier);
         if (participant == null) {
             participant = new Participant();
-            participant.setArgs(jp.getArgs());
-            participant.setClient(compensableManager.getRemoteClient());
+            participant.setServiceName(SpanContext.getServiceName());
             participant.setCompensableIdentifier(compensableIdentifier);
             participant.setTransactionContext(SpanContext.getTransactionContext());
-            participant.setParticipantStatus(ParticipantStatus.BEGIN);
+            participant.setParticipantStatus(ParticipantStatus.TRY);
             transaction.addParticipant(participant);
         }
         transaction.setCurrentParticipant(participant);
         transaction.setCompensableEnum(compensableEnum);
-        transactionCoordinator.update(new TransactionDTO(transaction));
         return transaction;
     }
 
     public void commit(Transaction transaction) {
-        if (transaction.getCompensableEnum().equals(CompensableEnum.TRY)
-                && SpanContext.getTransactionContext().getRoles() == TransactionRoles.LEADER) {
-            transaction.commit();
+        Participant participant = transaction.getCurrentParticipant();
+        switch (transaction.getCompensableEnum()) {
+            case TRY:
+                participant.setParticipantStatus(ParticipantStatus.TRY_SUCCESS);
+                transactionCoordinator.update(new TransactionDTO(transaction));
+                if (SpanContext.getTransactionContext().getRoles() == TransactionRoles.LEADER) {
+                    transactionCoordinator.commit(new String(transaction.getRootId().getGlobalTransactionId()));
+                }
+                break;
+            case CONFIRM:
+                participant.setParticipantStatus(ParticipantStatus.CONFIRM_SUCCESS);
+                transactionCoordinator.update(new ParticipantDTO(participant));
+                break;
+            case CANCEL:
+                participant.setParticipantStatus(ParticipantStatus.CANCEL_SUCCESS);
+                transactionCoordinator.update(new ParticipantDTO(participant));
+                break;
         }
-        transactionCoordinator.update(new ParticipantDTO(transaction.getCurrentParticipant()));
     }
 
     public void rollback(Transaction transaction) {
-        if (transaction.getCompensableEnum().equals(CompensableEnum.TRY)
-                && SpanContext.getTransactionContext().getRoles() == TransactionRoles.LEADER) {
-            transaction.rollback();
+        Participant participant = transaction.getCurrentParticipant();
+        switch (transaction.getCompensableEnum()) {
+            case TRY:
+                if (SpanContext.getTransactionContext().getRoles() == TransactionRoles.LEADER) {
+                    transactionCoordinator.rollback(new String(transaction.getRootId().getGlobalTransactionId()));
+                }
+                break;
+            case CONFIRM:
+                participant.setParticipantStatus(ParticipantStatus.CONFIRM_FAILED);
+                transactionCoordinator.update(new ParticipantDTO(participant));
+                break;
+            case CANCEL:
+                participant.setParticipantStatus(ParticipantStatus.CANCEL_FAILED);
+                transactionCoordinator.update(new ParticipantDTO(participant));
+                break;
         }
-        transactionCoordinator.update(new ParticipantDTO(transaction.getCurrentParticipant()));
     }
 
     public void cleanAfterCompletion(Transaction transaction) {

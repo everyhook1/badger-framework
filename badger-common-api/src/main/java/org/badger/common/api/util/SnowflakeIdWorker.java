@@ -1,4 +1,4 @@
-package org.badger.core.bootstrap.util;
+package org.badger.common.api.util;
 
 /**
  * Twitter_Snowflake<br>

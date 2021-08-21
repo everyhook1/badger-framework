@@ -1,4 +1,4 @@
-package org.badger.core.bootstrap.codec.serializer.impl;
+package org.badger.common.api.codec.serializer.impl;
 
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
@@ -6,7 +6,7 @@ import com.esotericsoftware.kryo.io.Output;
 import com.esotericsoftware.kryo.pool.KryoPool;
 import org.badger.common.api.RpcRequest;
 import org.badger.common.api.RpcResponse;
-import org.badger.core.bootstrap.codec.serializer.RpcSerializer;
+import org.badger.common.api.codec.serializer.RpcSerializer;
 
 import java.io.ByteArrayOutputStream;
 

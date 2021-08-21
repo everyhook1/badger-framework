@@ -6,7 +6,7 @@ import org.badger.common.api.RpcRequest;
 import org.badger.common.api.RpcResponse;
 import org.badger.common.api.SpanContext;
 import org.badger.core.bootstrap.NettyClient;
-import org.badger.core.bootstrap.util.SnowflakeIdWorker;
+import org.badger.common.api.util.SnowflakeIdWorker;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.config.BeanFactoryPostProcessor;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
@@ -108,6 +108,7 @@ public class EnhanceRpcProxyPostprocessor implements BeanFactoryPostProcessor, A
                     request.setArgTypes(method.getParameterTypes());
                     request.setSeqId(SnowflakeIdWorker.getId());
                     request.setParentRpc(SpanContext.getCurRequest());
+                    request.setTransactionContext(SpanContext.getTransactionContext());
                     RpcResponse response = (RpcResponse) nettyClient.send(request);
                     if (response.getCode() == 500) {
                         throw new Exception(response.getErrMsg());

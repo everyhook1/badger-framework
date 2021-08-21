@@ -1,8 +1,8 @@
-package org.badger.core.bootstrap.codec.serializer.impl;
+package org.badger.common.api.codec.serializer.impl;
 
 import org.badger.common.api.RpcRequest;
 import org.badger.common.api.RpcResponse;
-import org.badger.core.bootstrap.codec.serializer.RpcSerializer;
+import org.badger.common.api.codec.serializer.RpcSerializer;
 import org.nustaq.serialization.FSTConfiguration;
 import org.nustaq.serialization.FSTObjectInput;
 import org.nustaq.serialization.FSTObjectOutput;
@@ -22,21 +22,29 @@ public class FstSerializer implements RpcSerializer {
     }
 
     @Override
-    public <T> byte[] serialize(T obj) throws IOException {
+    public <T> byte[] serialize(T obj) {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         FSTObjectOutput objectOutput = configuration.getObjectOutput(out);
-        objectOutput.writeObject(obj);
-        objectOutput.flush();
-        byte[] data = out.toByteArray();
-        objectOutput.close();
-        return data;
+        try {
+            objectOutput.writeObject(obj);
+            objectOutput.flush();
+            byte[] data = out.toByteArray();
+            objectOutput.close();
+            return data;
+        } catch (IOException e) {
+            throw new IllegalStateException(e.getMessage(), e);
+        }
     }
 
     @Override
-    public <T> Object deserialize(byte[] bytes, Class<T> clazz) throws IOException, ClassNotFoundException {
+    public <T> Object deserialize(byte[] bytes, Class<T> clazz) {
         FSTObjectInput objectInput = configuration.getObjectInput(new ByteArrayInputStream(bytes));
-        Object readObject = objectInput.readObject();
-        objectInput.close();
-        return readObject;
+        try {
+            Object readObject = objectInput.readObject();
+            objectInput.close();
+            return readObject;
+        } catch (ClassNotFoundException | IOException e) {
+            throw new IllegalStateException(e.getMessage(), e);
+        }
     }
 }

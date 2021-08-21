@@ -17,12 +17,12 @@ import static org.badger.core.bootstrap.NettyClient.REQ_MAP;
 public class NettyClientHandler extends ChannelInboundHandlerAdapter {
 
     public void channelActive(ChannelHandlerContext ctx) {
-        log.info("已连接到RPC服务器.{}", ctx.channel().remoteAddress());
+        log.info("connect to rpc server.{}", ctx.channel().remoteAddress());
     }
 
     public void channelInactive(ChannelHandlerContext ctx) {
         InetSocketAddress address = (InetSocketAddress) ctx.channel().remoteAddress();
-        log.info("与RPC服务器断开连接." + address);
+        log.info("disconnect from rpc server." + address);
         ctx.channel().close();
     }
 

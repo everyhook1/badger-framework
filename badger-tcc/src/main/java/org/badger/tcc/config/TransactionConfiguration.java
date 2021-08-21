@@ -1,18 +1,13 @@
-/**
- * @(#)TransactionConfiguration.java, 8月 09, 2021.
- * <p>
- * Copyright 2021 fenbi.com. All rights reserved.
- * FENBI.COM PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
- */
+
 package org.badger.tcc.config;
 
 import org.badger.common.api.RpcProxy;
-import org.badger.common.api.remote.CLIENT;
-import org.badger.common.api.remote.SERVER;
 import org.badger.tcc.TransactionManager;
 import org.badger.tcc.aspect.CompensableAspect;
 import org.badger.tcc.spring.CompensableManager;
+import org.badger.tcc.spring.ResourceManager;
 import org.badger.tcc.spring.TransactionCoordinator;
+import org.badger.tcc.spring.impl.ResourceManagerImpl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -31,9 +26,8 @@ public class TransactionConfiguration {
     private TransactionCoordinator transactionCoordinator;
 
     @Bean
-    @ConditionalOnBean(value = {CLIENT.class, SERVER.class})
-    public CompensableManager compensableManager(CLIENT client, SERVER server) {
-        return new CompensableManager(client, server);
+    public CompensableManager compensableManager() {
+        return new CompensableManager();
     }
 
     @Bean

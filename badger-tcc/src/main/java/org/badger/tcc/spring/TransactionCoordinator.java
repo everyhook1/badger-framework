@@ -15,4 +15,8 @@ public interface TransactionCoordinator {
     void update(ParticipantDTO participantDTO);
 
     void clean(String gxid);
+
+    void commit(String gxid);
+
+    void rollback(String gxid);
 }

@@ -58,7 +58,7 @@ public class ProviderConfig implements ApplicationContextAware {
 
     @Bean
     @ConditionalOnBean(ZkConfig.class)
-    public CuratorFramework curatorFramework(ZkConfig zkConfig) {
+    public CuratorFramework curatorFramework(ZkConfig zkConfig) throws Exception {
         RetryPolicy policy = new ExponentialBackoffRetry(zkConfig.getSleepMsBetweenRetries(), zkConfig.getMaxRetries());
         CuratorFramework zkClient = CuratorFrameworkFactory
                 .builder()
@@ -75,6 +75,7 @@ public class ProviderConfig implements ApplicationContextAware {
         SpanContext.setServiceName(serverConfig.getServiceName());
         NettyClient nettyClient = NettyClient.getInstance();
         nettyClient.initServiceListener(client);
+        SpanContext.setClient(nettyClient);
         return nettyClient;
     }
 

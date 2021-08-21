@@ -1,5 +1,6 @@
 package org.badger.common.api;
 
+import org.badger.common.api.remote.CLIENT;
 import org.badger.common.api.transaction.TransactionContext;
 
 /**
@@ -9,6 +10,15 @@ public class SpanContext {
 
     private static String SERVICE_NAME;
 
+    private static CLIENT _CLIENT;
+
+    public static CLIENT getClient() {
+        return _CLIENT;
+    }
+
+    public static void setClient(CLIENT client) {
+        _CLIENT = client;
+    }
 
     private static final ThreadLocal<RpcRequest> curRequest = new InheritableThreadLocal<>();
 

@@ -1,18 +1,17 @@
-/**
- * @(#)TransactionCoordinatorImpl.java, 8月 11, 2021.
- * <p>
- * Copyright 2021 fenbi.com. All rights reserved.
- * FENBI.COM PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
- */
 package org.badger.tcc.coordinator.service;
 
 import com.google.common.collect.ImmutableMap;
 import lombok.extern.slf4j.Slf4j;
 import org.badger.common.api.RpcProvider;
+import org.badger.common.api.RpcRequest;
+import org.badger.common.api.SpanContext;
+import org.badger.common.api.util.SnowflakeIdWorker;
 import org.badger.tcc.entity.ParticipantDTO;
 import org.badger.tcc.entity.TransactionDTO;
+import org.badger.tcc.entity.TransactionStatus;
 import org.badger.tcc.spring.TransactionCoordinator;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Service;
@@ -31,17 +30,37 @@ public class TransactionCoordinatorImpl implements TransactionCoordinator {
     @Autowired
     private NamedParameterJdbcTemplate db;
 
+    private static final RowMapper<ParticipantDTO> PARTICIPANT_ROW_MAPPER = (rs, rowNum) -> {
+        ParticipantDTO dto = new ParticipantDTO();
+        dto.setBxid(rs.getString("bxid"));
+        dto.setGxid(rs.getString("gxid"));
+        dto.setRxid(rs.getString("rxid"));
+        dto.setStatus(rs.getInt("status"));
+        dto.setServiceName(rs.getString("serviceName"));
+        dto.setPayload(rs.getBytes("payload"));
+        dto.setVersion(rs.getInt("version"));
+        return dto;
+    };
+
+    private static final RowMapper<TransactionDTO> TRANSACTION_ROW_MAPPER = (rs, rowNum) -> {
+        TransactionDTO dto = new TransactionDTO();
+        dto.setGxid(rs.getString("gxid"));
+        dto.setRxid(rs.getString("rxid"));
+        dto.setStatus(rs.getInt("status"));
+        return dto;
+    };
+
     @Override
     public TransactionDTO getTransaction(String gxid) {
         log.info("TransactionCoordinatorImpl getTransaction {}", gxid);
-        List<TransactionDTO> transactionDTOS = db.queryForList("SELECT * FROM `transaction` WHERE gxid=:gxid",
-                ImmutableMap.of("gxid", gxid), TransactionDTO.class);
+        List<TransactionDTO> transactionDTOS = db.query("SELECT * FROM `transaction` WHERE gxid=:gxid",
+                ImmutableMap.of("gxid", gxid), TRANSACTION_ROW_MAPPER);
         if (transactionDTOS.size() == 0) {
             return null;
         }
         TransactionDTO transactionDTO = transactionDTOS.get(0);
-        List<ParticipantDTO> participantDTOS = db.queryForList("SELECT * FROM `participant` WHERE gxid=:gxid",
-                ImmutableMap.of("gxid", gxid), ParticipantDTO.class);
+        List<ParticipantDTO> participantDTOS = db.query("SELECT * FROM `participant` WHERE gxid=:gxid",
+                ImmutableMap.of("gxid", gxid), PARTICIPANT_ROW_MAPPER);
         transactionDTO.setParticipantDTOS(participantDTOS);
         return transactionDTO;
 
@@ -50,8 +69,8 @@ public class TransactionCoordinatorImpl implements TransactionCoordinator {
     @Override
     public void update(TransactionDTO transactionDTO) {
         log.info("TransactionCoordinatorImpl transaction {}", transactionDTO);
-        List<TransactionDTO> transactionDTOS = db.queryForList("SELECT * FROM `transaction` WHERE gxid=:gxid",
-                ImmutableMap.of("gxid", transactionDTO.getGxid()), TransactionDTO.class);
+        List<TransactionDTO> transactionDTOS = db.query("SELECT * FROM `transaction` WHERE gxid=:gxid",
+                ImmutableMap.of("gxid", transactionDTO.getGxid()), TRANSACTION_ROW_MAPPER);
         if (transactionDTOS.size() == 0) {
             db.update("INSERT INTO `transaction` SET gxid=:gxid,rxid=`rxid`,status=`status`", ImmutableMap.of(
                     "gxid", transactionDTO.getGxid(), "rxid", transactionDTO.getRxid(), "status", transactionDTO.getStatus()));
@@ -67,8 +86,8 @@ public class TransactionCoordinatorImpl implements TransactionCoordinator {
     @Override
     public void update(ParticipantDTO dto) {
         log.info("TransactionCoordinatorImpl participant {}", dto);
-        List<ParticipantDTO> participantDTOS = db.queryForList("SELECT * FROM `participant` WHERE bxid=:bxid",
-                ImmutableMap.of("bxid", dto.getBxid()), ParticipantDTO.class);
+        List<ParticipantDTO> participantDTOS = db.query("SELECT * FROM `participant` WHERE bxid=:bxid",
+                ImmutableMap.of("bxid", dto.getBxid()), PARTICIPANT_ROW_MAPPER);
         if (participantDTOS.size() == 1) {
             ParticipantDTO old = participantDTOS.get(0);
             if (dto.getVersion() < old.getVersion()) {
@@ -81,16 +100,11 @@ public class TransactionCoordinatorImpl implements TransactionCoordinator {
                     "`gxid`=:gxid ," +
                     "`rxid`=:rxid ," +
                     "`bxid`=:bxid ," +
-                    "`arg`=:arg ," +
+                    "`payload`=:payload ," +
                     "`serviceName`=:serviceName ," +
-                    "`clzName`=:clzName ," +
-                    "`beanName`=:beanName ," +
-                    "`identifier`=:identifier ," +
-                    "`tryMethod`=:tryMethod ," +
-                    "`cancelMethod`=:cancelMethod ," +
-                    "`confirmMethod`=:confirmMethod ," +
                     "`status`=:status ," +
                     "`version`=:version ", getSource(dto));
+            SpanContext.getClient().addListener(dto.getServiceName());
         }
     }
 
@@ -99,16 +113,10 @@ public class TransactionCoordinatorImpl implements TransactionCoordinator {
         source.addValue("gxid", dto.getGxid());
         source.addValue("rxid", dto.getRxid());
         source.addValue("bxid", dto.getBxid());
-        source.addValue("arg", dto.getArg());
-        source.addValue("serviceName", dto.getServiceName());
-        source.addValue("clzName", dto.getClzName());
-        source.addValue("beanName", dto.getBeanName());
-        source.addValue("identifier", dto.getIdentifier());
-        source.addValue("tryMethod", dto.getTryMethod());
-        source.addValue("cancelMethod", dto.getCancelMethod());
-        source.addValue("confirmMethod", dto.getConfirmMethod());
         source.addValue("status", dto.getStatus());
         source.addValue("version", dto.getVersion());
+        source.addValue("serviceName", dto.getServiceName());
+        source.addValue("payload", dto.getPayload());
         return source;
     }
 
@@ -116,5 +124,58 @@ public class TransactionCoordinatorImpl implements TransactionCoordinator {
     public void clean(String gxid) {
         db.update("DELETE FROM `transaction` WHERE gxid=:gxid", ImmutableMap.of("gxid", gxid));
         db.update("DELETE FROM `participant` WHERE gxid=:gxid", ImmutableMap.of("gxid", gxid));
+    }
+
+    private void transactionStatusChange(String gxid, int status) {
+        db.update("update `transaction` SET `status` = :status WHERE `gxid`=:gxid",
+                ImmutableMap.of("status", status, "gxid", gxid));
+    }
+
+    @Override
+    public void commit(String gxid) {
+        transactionStatusChange(gxid, TransactionStatus.TRY_SUCCESS.toInt());
+        List<ParticipantDTO> participantDTOS = db.query("SELECT * FROM `participant` WHERE gxid=:gxid",
+                ImmutableMap.of("gxid", gxid), PARTICIPANT_ROW_MAPPER);
+        try {
+            for (ParticipantDTO participantDTO : participantDTOS) {
+                RpcRequest request = new RpcRequest();
+                request.setClzName("ResourceManager");
+                request.setMethod("commit");
+                request.setServiceName(participantDTO.getServiceName());
+                request.setArgs(new Object[]{participantDTO});
+                request.setArgTypes(new Class<?>[]{ParticipantDTO.class});
+                request.setSeqId(SnowflakeIdWorker.getId());
+                request.setParentRpc(SpanContext.getCurRequest());
+                SpanContext.getClient().send(request);
+            }
+            transactionStatusChange(gxid, TransactionStatus.CONFIRM_SUCCESS.toInt());
+        } catch (Exception e) {
+            log.error("rollback failed gxid {}", gxid, e);
+            transactionStatusChange(gxid, TransactionStatus.CANCEL_FAILED.toInt());
+        }
+    }
+
+    @Override
+    public void rollback(String gxid) {
+        transactionStatusChange(gxid, TransactionStatus.TRY_FAILED.toInt());
+        List<ParticipantDTO> participantDTOS = db.query("SELECT * FROM `participant` WHERE gxid=:gxid AND `rxid`!=`bxid`",
+                ImmutableMap.of("gxid", gxid), PARTICIPANT_ROW_MAPPER);
+        try {
+            for (ParticipantDTO participantDTO : participantDTOS) {
+                RpcRequest request = new RpcRequest();
+                request.setClzName("ResourceManager");
+                request.setMethod("rollback");
+                request.setServiceName(participantDTO.getServiceName());
+                request.setArgs(new Object[]{participantDTO});
+                request.setArgTypes(new Class<?>[]{ParticipantDTO.class});
+                request.setSeqId(SnowflakeIdWorker.getId());
+                request.setParentRpc(SpanContext.getCurRequest());
+                SpanContext.getClient().send(request);
+            }
+            transactionStatusChange(gxid, TransactionStatus.CANCEL_SUCCESS.toInt());
+        } catch (Exception e) {
+            log.error("rollback failed gxid {}", gxid, e);
+            transactionStatusChange(gxid, TransactionStatus.CANCEL_FAILED.toInt());
+        }
     }
 }

@@ -1,2 +1,3 @@
 org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
-  org.badger.tcc.config.TransactionConfiguration
+  org.badger.tcc.config.TransactionConfiguration,\
+  org.badger.tcc.spring.impl.ResourceManagerImpl

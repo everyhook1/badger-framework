@@ -4,7 +4,7 @@ import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.ByteToMessageDecoder;
 import lombok.extern.slf4j.Slf4j;
-import org.badger.core.bootstrap.codec.serializer.RpcSerializer;
+import org.badger.common.api.codec.serializer.RpcSerializer;
 
 import java.util.List;
 

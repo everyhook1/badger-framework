@@ -25,8 +25,8 @@ import org.badger.common.api.RpcResponse;
 import org.badger.common.api.remote.SERVER;
 import org.badger.core.bootstrap.codec.RpcDecoder;
 import org.badger.core.bootstrap.codec.RpcEncoder;
-import org.badger.core.bootstrap.codec.serializer.RpcSerializer;
-import org.badger.core.bootstrap.codec.serializer.SerializerEnum;
+import org.badger.common.api.codec.serializer.RpcSerializer;
+import org.badger.common.api.codec.serializer.SerializerEnum;
 import org.badger.core.bootstrap.config.ServerConfig;
 import org.badger.core.bootstrap.handler.NettyServerHandler;
 import org.springframework.beans.factory.DisposableBean;
@@ -69,6 +69,7 @@ public class NettyServer implements DisposableBean, SERVER {
     }
 
     public Object dispatch(RpcRequest request) throws Exception {
+        log.info("dispatch {}", request);
         String className = request.getClzName();
         Object serviceBean;
         if (StringUtils.isEmpty(request.getQualifier())) {

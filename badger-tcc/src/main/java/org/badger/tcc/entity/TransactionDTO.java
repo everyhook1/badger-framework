@@ -1,9 +1,3 @@
-/**
- * @(#)TransactionDTO.java, 8月 18, 2021.
- * <p>
- * Copyright 2021 fenbi.com. All rights reserved.
- * FENBI.COM PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
- */
 package org.badger.tcc.entity;
 
 import lombok.AllArgsConstructor;
@@ -36,7 +30,7 @@ public class TransactionDTO {
 
     private int status;
 
-    public TransactionDTO(Transaction transaction) throws IOException {
+    public TransactionDTO(Transaction transaction) {
         this.gxid = new String(SpanContext.getTransactionContext().getRootId().getGlobalTransactionId());
         this.rxid = new String(SpanContext.getTransactionContext().getRootId().getBranchQualifier());
         List<ParticipantDTO> participantDTOS = new ArrayList<>();

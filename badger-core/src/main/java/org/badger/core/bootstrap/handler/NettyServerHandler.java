@@ -42,11 +42,11 @@ public class NettyServerHandler extends SimpleChannelInboundHandler<Object> {
     }
 
     public void channelActive(ChannelHandlerContext ctx) {
-        log.info("客户端连接成功!" + ctx.channel().remoteAddress());
+        log.info("client connect success!" + ctx.channel().remoteAddress());
     }
 
     public void channelInactive(ChannelHandlerContext ctx) {
-        log.info("客户端断开连接!{}", ctx.channel().remoteAddress());
+        log.info("client close connect!{}", ctx.channel().remoteAddress());
         ctx.channel().close();
     }
 

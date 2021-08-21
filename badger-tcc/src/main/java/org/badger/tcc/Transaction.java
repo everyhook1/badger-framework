@@ -1,9 +1,3 @@
-/**
- * @(#)Transaction.java, 8月 12, 2021.
- * <p>
- * Copyright 2021 fenbi.com. All rights reserved.
- * FENBI.COM PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
- */
 package org.badger.tcc;
 
 import lombok.Data;
@@ -39,15 +33,12 @@ public class Transaction {
     }
 
     public Transaction() {
-
+        this.transactionStatus = TransactionStatus.TRY;
     }
 
     public Transaction(TransactionXid rootId) {
+        this();
         this.rootId = rootId;
-    }
-
-    public void updateRegister() {
-        participants.forEach(Participant::updateRegister);
     }
 
     public Participant getParticipant(String identifier) {
@@ -55,20 +46,6 @@ public class Transaction {
             return null;
         }
         return participants.stream().filter(o -> o.getCompensableIdentifier().getIdentifier().equals(identifier)).findFirst().orElseThrow(RuntimeException::new);
-    }
-
-    public void commit() {
-        if (CollectionUtils.isEmpty(participants)) {
-            return;
-        }
-        participants.forEach(Participant::commit);
-    }
-
-    public void rollback() {
-        if (CollectionUtils.isEmpty(participants)) {
-            return;
-        }
-        participants.forEach(Participant::rollback);
     }
 
     public void cleanAfterCompletion() {

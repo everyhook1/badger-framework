@@ -1,20 +1,13 @@
-/**
- * @(#)CompensableManager.java, 8月 09, 2021.
- * <p>
- * Copyright 2021 fenbi.com. All rights reserved.
- * FENBI.COM PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
- */
+
 package org.badger.tcc.spring;
 
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
-import org.badger.common.api.remote.CLIENT;
-import org.badger.common.api.remote.SERVER;
 import org.badger.common.api.transaction.Compensable;
 import org.badger.tcc.entity.CompensableIdentifier;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.BeansException;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.beans.factory.config.InstantiationAwareBeanPostProcessor;
 import org.springframework.util.ReflectionUtils;
 
@@ -34,26 +27,10 @@ import java.util.concurrent.ConcurrentHashMap;
 @Slf4j
 public class CompensableManager implements InstantiationAwareBeanPostProcessor {
 
-    @Value("${rpc.serviceName}")
-    private String serviceName;
-
     private final Map<String, CompensableIdentifier> compensableIdentifierMap = new ConcurrentHashMap<>();
-
-    private CLIENT remoteClient;
-
-    private SERVER server;
-
-    public CLIENT getRemoteClient() {
-        return remoteClient;
-    }
 
     public CompensableManager() {
 
-    }
-
-    public CompensableManager(CLIENT remoteClient, SERVER server) {
-        this.remoteClient = remoteClient;
-        this.server = server;
     }
 
     public static boolean equals(Class<?>[] a, Class<?>[] a2) {
@@ -76,7 +53,12 @@ public class CompensableManager implements InstantiationAwareBeanPostProcessor {
     }
 
     public CompensableIdentifier getIdentifier(String identifier) {
-        return compensableIdentifierMap.get(identifier);
+        if (!compensableIdentifierMap.containsKey(identifier)) {
+            throw new IllegalStateException(String.format("no identifier %s exist", identifier));
+        }
+        CompensableIdentifier compensableIdentifier = new CompensableIdentifier();
+        BeanUtils.copyProperties(compensableIdentifierMap.get(identifier), compensableIdentifier);
+        return compensableIdentifier;
     }
 
     public boolean postProcessAfterInstantiation(Object bean, String beanName) throws BeansException {
@@ -89,10 +71,6 @@ public class CompensableManager implements InstantiationAwareBeanPostProcessor {
                 methodMap.get(identifier).add(new ImmutablePair<>(compensable, method));
             }
         });
-        methodMap.values().removeIf(list -> list.size() != 3);
-        if (methodMap.size() != 0) {
-            server.addBean(beanName, bean);
-        }
         methodMap.forEach((identifier, list) -> {
             Compensable c0 = list.get(0).getKey();
             Class<?>[] p0 = list.get(0).getValue().getParameterTypes();
@@ -126,23 +104,11 @@ public class CompensableManager implements InstantiationAwareBeanPostProcessor {
             CompensableIdentifier compensableIdentifier = new CompensableIdentifier();
             compensableIdentifier.setIdentifier(identifier);
             compensableIdentifier.setClzName(bean.getClass().getName());
-            compensableIdentifier.setBean(bean);
             compensableIdentifier.setBeanName(beanName);
             compensableIdentifier.setTryMethod(c0.tryMethod());
             compensableIdentifier.setConfirmMethod(c0.confirmMethod());
             compensableIdentifier.setCancelMethod(c0.cancelMethod());
             compensableIdentifier.setParameterTypes(p0);
-            compensableIdentifier.setServiceName(serviceName);
-            for (Pair<Compensable, Method> pair : list) {
-                Method method = pair.getValue();
-                if (method.getName().equals(compensableIdentifier.getTryMethod())) {
-                    compensableIdentifier.setTryM(method);
-                } else if (method.getName().equals(compensableIdentifier.getConfirmMethod())) {
-                    compensableIdentifier.setConfirmM(method);
-                } else if (method.getName().equals(compensableIdentifier.getCancelMethod())) {
-                    compensableIdentifier.setCancelM(method);
-                }
-            }
             compensableIdentifierMap.put(identifier, compensableIdentifier);
         });
 

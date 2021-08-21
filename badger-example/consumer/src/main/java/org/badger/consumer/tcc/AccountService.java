@@ -1,9 +1,3 @@
-/**
- * @(#)AccountService.java, 8月 10, 2021.
- * <p>
- * Copyright 2021 fenbi.com. All rights reserved.
- * FENBI.COM PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
- */
 package org.badger.consumer.tcc;
 
 import lombok.extern.slf4j.Slf4j;

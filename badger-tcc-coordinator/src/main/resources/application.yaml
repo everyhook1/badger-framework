@@ -13,3 +13,6 @@ spring:
     url: jdbc:mysql://${MYSQL_HOST:127.0.0.1}:3306/tcc-coordinator
     username: ${MYSQL_USERNAME:root}
     password: ${MYSQL_PASSWORD:root}
+  sql:
+    init:
+      mode: always

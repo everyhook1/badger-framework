@@ -21,12 +21,11 @@ import org.apache.curator.framework.recipes.cache.CuratorCache;
 import org.apache.curator.framework.recipes.cache.CuratorCacheListener;
 import org.badger.common.api.RpcRequest;
 import org.badger.common.api.RpcResponse;
-import org.badger.common.api.SpanContext;
 import org.badger.common.api.remote.CLIENT;
 import org.badger.core.bootstrap.codec.RpcDecoder;
 import org.badger.core.bootstrap.codec.RpcEncoder;
-import org.badger.core.bootstrap.codec.serializer.RpcSerializer;
-import org.badger.core.bootstrap.codec.serializer.SerializerEnum;
+import org.badger.common.api.codec.serializer.RpcSerializer;
+import org.badger.common.api.codec.serializer.SerializerEnum;
 import org.badger.core.bootstrap.entity.Peer;
 import org.badger.core.bootstrap.handler.NettyClientHandler;
 import org.springframework.beans.factory.DisposableBean;
@@ -56,9 +55,6 @@ public class NettyClient implements DisposableBean, CLIENT {
     }
 
     public void addListener(String serviceName) {
-//        if (serviceName.equals(SpanContext.getServiceName())) {
-//            return;
-//        }
         if (curatorCacheMap.containsKey(serviceName)) {
             log.info("curatorCacheMap {} already exists", serviceName);
             return;
