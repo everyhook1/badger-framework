@@ -112,10 +112,7 @@ public class TransactionManager {
     }
 
     public void cleanAfterCompletion(Transaction transaction) {
-        if (transaction.getCompensableEnum().equals(CompensableEnum.TRY)
-                && SpanContext.getTransactionContext().getRoles() == TransactionRoles.LEADER) {
-            transactionCoordinator.clean(new String(SpanContext.getTransactionContext().getRootId().getGlobalTransactionId()));
-        }
+        log.info("cleanAfterCompletion {}", transaction);
         SpanContext.removeTransactionContext();
         transactionThreadLocal.remove();
     }

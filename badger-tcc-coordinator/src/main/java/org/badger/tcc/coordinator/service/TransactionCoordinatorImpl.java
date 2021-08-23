@@ -1,8 +1,9 @@
 package org.badger.tcc.coordinator.service;
 
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.curator.framework.CuratorFramework;
+import org.apache.curator.framework.recipes.leader.LeaderLatch;
 import org.badger.common.api.RpcProvider;
 import org.badger.common.api.RpcRequest;
 import org.badger.common.api.SpanContext;
@@ -15,11 +16,17 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 
+import javax.annotation.PostConstruct;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.LinkedBlockingDeque;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @author liubin01
@@ -31,6 +38,22 @@ public class TransactionCoordinatorImpl implements TransactionCoordinator {
 
     @Autowired
     private NamedParameterJdbcTemplate db;
+
+    @Autowired
+    private CuratorFramework curatorFramework;
+
+    private static final String LEADER_PATH = "/tcc-coordinator/leader";
+
+    private LeaderLatch leaderLatch;
+
+    @PostConstruct
+    public void init() throws Exception {
+        leaderLatch = new LeaderLatch(curatorFramework, LEADER_PATH);
+        leaderLatch.start();
+    }
+
+    private static final ThreadPoolExecutor THREAD_POOL =
+            new ThreadPoolExecutor(32, 32, 0, TimeUnit.MICROSECONDS, new LinkedBlockingDeque<>(512));
 
     private static final RowMapper<ParticipantDTO> PARTICIPANT_ROW_MAPPER = (rs, rowNum) -> {
         ParticipantDTO dto = new ParticipantDTO();
@@ -122,10 +145,12 @@ public class TransactionCoordinatorImpl implements TransactionCoordinator {
         return source;
     }
 
-    @Override
     public void clean(String gxid) {
-        db.update("DELETE FROM `transaction` WHERE gxid=:gxid", ImmutableMap.of("gxid", gxid));
-        db.update("DELETE FROM `participant` WHERE gxid=:gxid", ImmutableMap.of("gxid", gxid));
+        TransactionDTO transactionDTO = getTransaction(gxid);
+        if (transactionDTO.getParticipantDTOS().stream().allMatch(o -> o.getStatus() == transactionDTO.getStatus())) {
+            db.update("DELETE FROM `transaction` WHERE gxid=:gxid", ImmutableMap.of("gxid", gxid));
+            db.update("DELETE FROM `participant` WHERE gxid=:gxid", ImmutableMap.of("gxid", gxid));
+        }
     }
 
     private void transactionStatusChange(String gxid, int status) {
@@ -138,7 +163,7 @@ public class TransactionCoordinatorImpl implements TransactionCoordinator {
         transactionStatusChange(gxid, TransactionStatus.TRY_SUCCESS.toInt());
         TransactionDTO transactionDTO = getTransaction(gxid);
         List<ParticipantDTO> participantDTOS = transactionDTO.getParticipantDTOS();
-        new Thread(() -> {
+        THREAD_POOL.submit(() -> {
             try {
                 for (ParticipantDTO participantDTO : participantDTOS) {
                     RpcRequest request = new RpcRequest();
@@ -157,7 +182,7 @@ public class TransactionCoordinatorImpl implements TransactionCoordinator {
                 log.error("rollback failed gxid {}", gxid, e);
                 transactionStatusChange(gxid, TransactionStatus.CANCEL_FAILED.toInt());
             }
-        }).start();
+        });
     }
 
     @Override
@@ -165,7 +190,7 @@ public class TransactionCoordinatorImpl implements TransactionCoordinator {
         transactionStatusChange(gxid, TransactionStatus.TRY_FAILED.toInt());
         TransactionDTO transactionDTO = getTransaction(gxid);
         List<ParticipantDTO> participantDTOS = transactionDTO.getParticipantDTOS();
-        new Thread(() -> {
+        THREAD_POOL.submit(() -> {
             try {
                 for (ParticipantDTO participantDTO : participantDTOS) {
                     RpcRequest request = new RpcRequest();
@@ -184,6 +209,26 @@ public class TransactionCoordinatorImpl implements TransactionCoordinator {
                 log.error("rollback failed gxid {}", gxid, e);
                 transactionStatusChange(gxid, TransactionStatus.CANCEL_FAILED.toInt());
             }
-        }).start();
+        });
+    }
+
+    @Scheduled(cron = "0 * * * * ?")
+    public void execute() {
+        if (!leaderLatch.hasLeadership()) {
+            log.info("not the leader");
+            return;
+        }
+        log.info("the leader");
+
+        List<TransactionDTO> transactionDTOS = db.query("SELECT * FROM `transaction` LIMIT 100", TRANSACTION_ROW_MAPPER);
+        if (transactionDTOS.size() == 0) {
+            return;
+        }
+        for (TransactionDTO transactionDTO : transactionDTOS) {
+            if (transactionDTO.getStatus() == TransactionStatus.CONFIRM_SUCCESS.toInt() ||
+                    transactionDTO.getStatus() == TransactionStatus.CANCEL_SUCCESS.toInt()) {
+                clean(transactionDTO.getGxid());
+            }
+        }
     }
 }

@@ -2,8 +2,6 @@ package org.badger.core.bootstrap.autoconfigure;
 
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.tuple.ImmutablePair;
-import org.apache.commons.lang3.tuple.Pair;
 import org.apache.curator.RetryPolicy;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
@@ -29,6 +27,7 @@ import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -85,7 +84,6 @@ public class ProviderConfig implements ApplicationContextAware {
     public SERVER nettyServer(ServerConfig serverConfig, CuratorFramework client) throws Throwable {
         Map<String, Object> objectMap = applicationContext.getBeansWithAnnotation(RpcProvider.class);
         Map<String, Object> serviceMap = new HashMap<>();
-        Map<Pair<String, String>, Object> servicePairMap = new HashMap<>();
         objectMap.forEach((k, v) -> {
             serviceMap.put(k, v);
             Class<?> clazz = v.getClass();
@@ -94,13 +92,9 @@ public class ProviderConfig implements ApplicationContextAware {
             if (rpcProvider != null && StringUtils.isNotEmpty(rpcProvider.qualifier())) {
                 serviceMap.put(rpcProvider.qualifier(), v);
             }
-            for (Class<?> inter : interfaces) {
-                String interfaceName = inter.getSimpleName();
-                serviceMap.put(interfaceName, v);
-                servicePairMap.put(ImmutablePair.of(interfaceName, k), v);
-            }
+            Arrays.stream(interfaces).forEach(inter -> serviceMap.put(inter.getSimpleName(), v));
         });
-        NettyServer nettyServer = new NettyServer(serverConfig, serviceMap, servicePairMap);
+        NettyServer nettyServer = new NettyServer(serverConfig, serviceMap);
         nettyServer.start();
         register(client, serverConfig);
         client.getConnectionStateListenable().addListener((cli, newState) -> {

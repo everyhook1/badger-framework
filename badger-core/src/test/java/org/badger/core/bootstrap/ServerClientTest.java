@@ -13,7 +13,6 @@ import org.junit.Test;
 import org.springframework.util.StopWatch;
 
 import java.lang.reflect.Method;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
 
@@ -39,7 +38,7 @@ public class ServerClientTest {
         int serverPort = new Random().nextInt(30000);
         ServerConfig config = new ServerConfig(serverPort, serviceName);
         Map<String, Object> serviceMap = ImmutableMap.of("echo", new EchoImpl());
-        NettyServer nettyServer = new NettyServer(config, serviceMap, new HashMap<>(), rpcSerializer);
+        NettyServer nettyServer = new NettyServer(config, serviceMap, rpcSerializer);
         nettyServer.start();
         NettyClient nettyClient = NettyClient.getInstance(rpcSerializer);
         nettyClient.connectChannel(serviceName, "localhost", serverPort);

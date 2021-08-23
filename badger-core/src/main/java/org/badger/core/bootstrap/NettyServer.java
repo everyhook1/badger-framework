@@ -18,8 +18,6 @@ import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.timeout.IdleStateHandler;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.tuple.ImmutablePair;
-import org.apache.commons.lang3.tuple.Pair;
 import org.badger.common.api.RpcRequest;
 import org.badger.common.api.RpcResponse;
 import org.badger.common.api.remote.SERVER;
@@ -52,19 +50,16 @@ public class NettyServer implements DisposableBean, SERVER {
     private Channel channel;
 
     private final Map<String, Object> serviceMap;
-    private final Map<Pair<String, String>, Object> servicePairMap;
     private final RpcSerializer rpcSerializer;
 
-    public NettyServer(ServerConfig config, Map<String, Object> serviceMap,
-                       Map<Pair<String, String>, Object> servicePairMap) {
-        this(config, serviceMap, servicePairMap, SerializerEnum.DEFAULT());
+    public NettyServer(ServerConfig config, Map<String, Object> serviceMap) {
+        this(config, serviceMap, SerializerEnum.DEFAULT());
     }
 
     public NettyServer(ServerConfig config, Map<String, Object> serviceMap,
-                       Map<Pair<String, String>, Object> servicePairMap, RpcSerializer rpcSerializer) {
+                       RpcSerializer rpcSerializer) {
         this.config = config;
         this.serviceMap = serviceMap;
-        this.servicePairMap = servicePairMap;
         this.rpcSerializer = rpcSerializer;
     }
 
