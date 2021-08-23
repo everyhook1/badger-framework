@@ -169,7 +169,7 @@ public class TransactionCoordinatorImpl implements TransactionCoordinator {
             try {
                 for (ParticipantDTO participantDTO : participantDTOS) {
                     RpcRequest request = new RpcRequest();
-                    transactionDTO.setParticipantDTOS(ImmutableList.of(participantDTO));
+                    transactionDTO.setParticipantDTOS(Collections.singletonList(participantDTO));
                     request.setClzName("ResourceManager");
                     request.setMethod("rollback");
                     request.setServiceName(participantDTO.getServiceName());

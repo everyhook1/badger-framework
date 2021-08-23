@@ -41,36 +41,31 @@ public class TransactionManager {
             return transactionThreadLocal.get();
         }
         Transaction transaction;
-        TransactionContext context = SpanContext.getTransactionContext();
+        TransactionContext context;
         RpcRequest request = SpanContext.getCurRequest();
-        if (context == null && request != null && request.getTransactionContext() != null) {
-            TransactionContext last = request.getTransactionContext();
-            context = TransactionContext.newBranch(last);
+        if (request != null && request.getTransactionContext() != null) {
+            context = TransactionContext.newBranch(request.getTransactionContext());
             transaction = transactionCoordinator.getTransaction(new String(context.getRootId().getGlobalTransactionId())).toTransaction();
-        } else if (context == null) {
+        } else {
             context = TransactionContext.init();
             transaction = new Transaction(context.getRootId());
-            SpanContext.setTransactionContext(context);
-        } else {
-            transaction = transactionCoordinator.getTransaction(new String(context.getRootId().getGlobalTransactionId())).toTransaction();
         }
+        SpanContext.setTransactionContext(context);
         Method method = ((MethodSignature) (jp.getSignature())).getMethod();
         Compensable compensable = method.getAnnotation(Compensable.class);
         String identifier = compensable.identifier();
         CompensableIdentifier compensableIdentifier = compensableManager.getIdentifier(identifier);
         compensableIdentifier.setArgs(jp.getArgs());
         CompensableEnum compensableEnum = compensableIdentifier.getCompensableEnum(method.getName());
-        Participant participant = transaction.getParticipant(identifier);
-        if (participant == null) {
-            participant = new Participant();
-            participant.setServiceName(SpanContext.getServiceName());
-            participant.setCompensableIdentifier(compensableIdentifier);
-            participant.setTransactionContext(SpanContext.getTransactionContext());
-            participant.setParticipantStatus(ParticipantStatus.TRY);
-            transaction.addParticipant(participant);
-        }
+        Participant participant = new Participant();
+        participant.setServiceName(SpanContext.getServiceName());
+        participant.setCompensableIdentifier(compensableIdentifier);
+        participant.setTransactionContext(SpanContext.getTransactionContext());
+        participant.setParticipantStatus(ParticipantStatus.TRY);
+        transaction.addParticipant(participant);
         transaction.setCurrentParticipant(participant);
         transaction.setCompensableEnum(compensableEnum);
+        transactionCoordinator.update(new TransactionDTO(transaction));
         return transaction;
     }
 
@@ -79,7 +74,7 @@ public class TransactionManager {
         switch (transaction.getCompensableEnum()) {
             case TRY:
                 participant.setParticipantStatus(ParticipantStatus.TRY_SUCCESS);
-                transactionCoordinator.update(new TransactionDTO(transaction));
+                transactionCoordinator.update(new ParticipantDTO(participant));
                 if (SpanContext.getTransactionContext().getRoles() == TransactionRoles.LEADER) {
                     transactionCoordinator.commit(new String(transaction.getRootId().getGlobalTransactionId()));
                 }
@@ -99,6 +94,8 @@ public class TransactionManager {
         Participant participant = transaction.getCurrentParticipant();
         switch (transaction.getCompensableEnum()) {
             case TRY:
+                participant.setParticipantStatus(ParticipantStatus.TRY_FAILED);
+                transactionCoordinator.update(new ParticipantDTO(participant));
                 if (SpanContext.getTransactionContext().getRoles() == TransactionRoles.LEADER) {
                     transactionCoordinator.rollback(new String(transaction.getRootId().getGlobalTransactionId()));
                 }

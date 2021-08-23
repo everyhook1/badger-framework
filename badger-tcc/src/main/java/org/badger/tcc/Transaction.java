@@ -40,11 +40,4 @@ public class Transaction {
         this();
         this.rootId = rootId;
     }
-
-    public Participant getParticipant(String identifier) {
-        if (CollectionUtils.isEmpty(participants)) {
-            return null;
-        }
-        return participants.stream().filter(o -> o.getCompensableIdentifier().getIdentifier().equals(identifier)).findFirst().orElseThrow(RuntimeException::new);
-    }
 }
