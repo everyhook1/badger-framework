@@ -75,7 +75,7 @@ public class NettyServer implements DisposableBean, SERVER {
         if (StringUtils.isEmpty(request.getQualifier())) {
             serviceBean = serviceMap.get(request.getClzName());
         } else {
-            serviceBean = servicePairMap.get(ImmutablePair.of(request.getClzName(), request.getQualifier()));
+            serviceBean = serviceMap.get(request.getQualifier());
         }
 
         if (serviceBean != null) {

@@ -6,6 +6,7 @@ import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.annotation.Pointcut;
+import org.aspectj.lang.reflect.MethodSignature;
 import org.badger.tcc.Transaction;
 import org.badger.tcc.TransactionManager;
 
@@ -29,7 +30,8 @@ public class CompensableAspect {
 
     @Around("compensableService()")
     public Object interceptCompensableMethod(ProceedingJoinPoint jp) throws Throwable {
-        log.info("start aspect");
+        String methodName = ((MethodSignature) jp.getSignature()).getMethod().getName();
+        log.info("@@@ start aspect {} @@@", methodName);
         Transaction transaction = transactionManager.begin(jp);
         Object returnValue;
         try {
@@ -43,7 +45,7 @@ public class CompensableAspect {
         } finally {
             transactionManager.cleanAfterCompletion(transaction);
         }
-        log.info("end aspect");
+        log.info("@@@ end aspect {} @@@", methodName);
         return returnValue;
     }
 }

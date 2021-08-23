@@ -76,7 +76,7 @@ public class EnhanceRpcProxyPostprocessor implements BeanFactoryPostProcessor, A
                 Field[] fields = aClazz.getDeclaredFields();
                 for (Field field : fields) {
                     RpcProxy fan = field.getAnnotation(RpcProxy.class);
-                    if (fan != null && !serviceNameSet.contains(fan.serviceName())) {
+                    if (fan != null) {
                         serviceNameSet.add(fan.serviceName());
                         String clzName = field.getType().getName();
                         beanFactory.registerSingleton(clzName, enhance(clzName, fan.qualifier(), fan.serviceName(), fan.timeout()));

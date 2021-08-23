@@ -4,7 +4,7 @@ rpc:
 
 zk:
   address: ${ZK_URL:127.0.0.1:2181}
-
+tcc.enabled: true
 spring:
   datasource:
     url: jdbc:mysql://${MYSQL_HOST:127.0.0.1}:3306/provider

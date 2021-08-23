@@ -1,12 +1,10 @@
 package org.badger.tcc.spring;
 
-import org.badger.tcc.entity.ParticipantDTO;
-
-import java.lang.reflect.InvocationTargetException;
+import org.badger.tcc.entity.TransactionDTO;
 
 public interface ResourceManager {
 
-    Object commit(ParticipantDTO participantDTO) throws NoSuchMethodException, InvocationTargetException, IllegalAccessException;
+    Object commit(TransactionDTO transactionDTO);
 
-    Object rollback(ParticipantDTO participantDTO) throws NoSuchMethodException, InvocationTargetException, IllegalAccessException;
+    Object rollback(TransactionDTO transactionDTO);
 }

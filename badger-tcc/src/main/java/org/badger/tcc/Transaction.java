@@ -47,8 +47,4 @@ public class Transaction {
         }
         return participants.stream().filter(o -> o.getCompensableIdentifier().getIdentifier().equals(identifier)).findFirst().orElseThrow(RuntimeException::new);
     }
-
-    public void cleanAfterCompletion() {
-
-    }
 }

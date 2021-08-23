@@ -1,5 +1,6 @@
 package org.badger.tcc.coordinator.service;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import lombok.extern.slf4j.Slf4j;
 import org.badger.common.api.RpcProvider;
@@ -17,6 +18,7 @@ import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -134,48 +136,54 @@ public class TransactionCoordinatorImpl implements TransactionCoordinator {
     @Override
     public void commit(String gxid) {
         transactionStatusChange(gxid, TransactionStatus.TRY_SUCCESS.toInt());
-        List<ParticipantDTO> participantDTOS = db.query("SELECT * FROM `participant` WHERE gxid=:gxid",
-                ImmutableMap.of("gxid", gxid), PARTICIPANT_ROW_MAPPER);
-        try {
-            for (ParticipantDTO participantDTO : participantDTOS) {
-                RpcRequest request = new RpcRequest();
-                request.setClzName("ResourceManager");
-                request.setMethod("commit");
-                request.setServiceName(participantDTO.getServiceName());
-                request.setArgs(new Object[]{participantDTO});
-                request.setArgTypes(new Class<?>[]{ParticipantDTO.class});
-                request.setSeqId(SnowflakeIdWorker.getId());
-                request.setParentRpc(SpanContext.getCurRequest());
-                SpanContext.getClient().send(request);
+        TransactionDTO transactionDTO = getTransaction(gxid);
+        List<ParticipantDTO> participantDTOS = transactionDTO.getParticipantDTOS();
+        new Thread(() -> {
+            try {
+                for (ParticipantDTO participantDTO : participantDTOS) {
+                    RpcRequest request = new RpcRequest();
+                    transactionDTO.setParticipantDTOS(Collections.singletonList(participantDTO));
+                    request.setClzName("ResourceManager");
+                    request.setMethod("commit");
+                    request.setServiceName(participantDTO.getServiceName());
+                    request.setArgs(new Object[]{transactionDTO});
+                    request.setArgTypes(new Class<?>[]{TransactionDTO.class});
+                    request.setSeqId(SnowflakeIdWorker.getId());
+                    request.setParentRpc(SpanContext.getCurRequest());
+                    SpanContext.getClient().send(request);
+                }
+                transactionStatusChange(gxid, TransactionStatus.CONFIRM_SUCCESS.toInt());
+            } catch (Exception e) {
+                log.error("rollback failed gxid {}", gxid, e);
+                transactionStatusChange(gxid, TransactionStatus.CANCEL_FAILED.toInt());
             }
-            transactionStatusChange(gxid, TransactionStatus.CONFIRM_SUCCESS.toInt());
-        } catch (Exception e) {
-            log.error("rollback failed gxid {}", gxid, e);
-            transactionStatusChange(gxid, TransactionStatus.CANCEL_FAILED.toInt());
-        }
+        }).start();
     }
 
     @Override
     public void rollback(String gxid) {
         transactionStatusChange(gxid, TransactionStatus.TRY_FAILED.toInt());
-        List<ParticipantDTO> participantDTOS = db.query("SELECT * FROM `participant` WHERE gxid=:gxid AND `rxid`!=`bxid`",
-                ImmutableMap.of("gxid", gxid), PARTICIPANT_ROW_MAPPER);
-        try {
-            for (ParticipantDTO participantDTO : participantDTOS) {
-                RpcRequest request = new RpcRequest();
-                request.setClzName("ResourceManager");
-                request.setMethod("rollback");
-                request.setServiceName(participantDTO.getServiceName());
-                request.setArgs(new Object[]{participantDTO});
-                request.setArgTypes(new Class<?>[]{ParticipantDTO.class});
-                request.setSeqId(SnowflakeIdWorker.getId());
-                request.setParentRpc(SpanContext.getCurRequest());
-                SpanContext.getClient().send(request);
+        TransactionDTO transactionDTO = getTransaction(gxid);
+        List<ParticipantDTO> participantDTOS = transactionDTO.getParticipantDTOS();
+        new Thread(() -> {
+            try {
+                for (ParticipantDTO participantDTO : participantDTOS) {
+                    RpcRequest request = new RpcRequest();
+                    transactionDTO.setParticipantDTOS(ImmutableList.of(participantDTO));
+                    request.setClzName("ResourceManager");
+                    request.setMethod("rollback");
+                    request.setServiceName(participantDTO.getServiceName());
+                    request.setArgs(new Object[]{transactionDTO});
+                    request.setArgTypes(new Class<?>[]{TransactionDTO.class});
+                    request.setSeqId(SnowflakeIdWorker.getId());
+                    request.setParentRpc(SpanContext.getCurRequest());
+                    SpanContext.getClient().send(request);
+                }
+                transactionStatusChange(gxid, TransactionStatus.CANCEL_SUCCESS.toInt());
+            } catch (Exception e) {
+                log.error("rollback failed gxid {}", gxid, e);
+                transactionStatusChange(gxid, TransactionStatus.CANCEL_FAILED.toInt());
             }
-            transactionStatusChange(gxid, TransactionStatus.CANCEL_SUCCESS.toInt());
-        } catch (Exception e) {
-            log.error("rollback failed gxid {}", gxid, e);
-            transactionStatusChange(gxid, TransactionStatus.CANCEL_FAILED.toInt());
-        }
+        }).start();
     }
 }

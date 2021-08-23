@@ -1,6 +1,4 @@
-
 package org.badger.tcc;
-
 
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
@@ -32,11 +30,19 @@ public class TransactionManager {
 
     private CompensableManager compensableManager;
 
+    private static final ThreadLocal<Transaction> transactionThreadLocal = new InheritableThreadLocal<>();
+
+    public static void setTransactionThreadLocal(Transaction transaction) {
+        transactionThreadLocal.set(transaction);
+    }
+
     public Transaction begin(ProceedingJoinPoint jp) {
+        if (transactionThreadLocal.get() != null) {
+            return transactionThreadLocal.get();
+        }
         Transaction transaction;
         TransactionContext context = SpanContext.getTransactionContext();
         RpcRequest request = SpanContext.getCurRequest();
-        log.debug("context {}", context);
         if (context == null && request != null && request.getTransactionContext() != null) {
             TransactionContext last = request.getTransactionContext();
             context = TransactionContext.newBranch(last);
@@ -48,7 +54,6 @@ public class TransactionManager {
         } else {
             transaction = transactionCoordinator.getTransaction(new String(context.getRootId().getGlobalTransactionId())).toTransaction();
         }
-
         Method method = ((MethodSignature) (jp.getSignature())).getMethod();
         Compensable compensable = method.getAnnotation(Compensable.class);
         String identifier = compensable.identifier();
@@ -112,8 +117,9 @@ public class TransactionManager {
     public void cleanAfterCompletion(Transaction transaction) {
         if (transaction.getCompensableEnum().equals(CompensableEnum.TRY)
                 && SpanContext.getTransactionContext().getRoles() == TransactionRoles.LEADER) {
-            transaction.cleanAfterCompletion();
+            transactionCoordinator.clean(new String(SpanContext.getTransactionContext().getRootId().getGlobalTransactionId()));
         }
         SpanContext.removeTransactionContext();
+        transactionThreadLocal.remove();
     }
 }

@@ -1,6 +1,7 @@
 package org.badger.core.bootstrap.autoconfigure;
 
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.curator.RetryPolicy;
@@ -86,8 +87,13 @@ public class ProviderConfig implements ApplicationContextAware {
         Map<String, Object> serviceMap = new HashMap<>();
         Map<Pair<String, String>, Object> servicePairMap = new HashMap<>();
         objectMap.forEach((k, v) -> {
+            serviceMap.put(k, v);
             Class<?> clazz = v.getClass();
             Class<?>[] interfaces = clazz.getInterfaces();
+            RpcProvider rpcProvider = applicationContext.findAnnotationOnBean(k, RpcProvider.class);
+            if (rpcProvider != null && StringUtils.isNotEmpty(rpcProvider.qualifier())) {
+                serviceMap.put(rpcProvider.qualifier(), v);
+            }
             for (Class<?> inter : interfaces) {
                 String interfaceName = inter.getSimpleName();
                 serviceMap.put(interfaceName, v);
