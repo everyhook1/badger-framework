@@ -9,6 +9,7 @@ import org.badger.common.api.RpcRequest;
 import org.badger.common.api.SpanContext;
 import org.badger.common.api.util.SnowflakeIdWorker;
 import org.badger.tcc.entity.ParticipantDTO;
+import org.badger.tcc.entity.ParticipantStatus;
 import org.badger.tcc.entity.TransactionDTO;
 import org.badger.tcc.entity.TransactionStatus;
 import org.badger.tcc.spring.TransactionCoordinator;
@@ -21,7 +22,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 
 import javax.annotation.PostConstruct;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.LinkedBlockingDeque;
@@ -110,7 +110,7 @@ public class TransactionCoordinatorImpl implements TransactionCoordinator {
 
     @Override
     public void update(ParticipantDTO dto) {
-        log.info("TransactionCoordinatorImpl participant {}", dto);
+        log.info("TransactionCoordinatorImpl participant {} {}", dto.getServiceName(), ParticipantStatus.fromInt(dto.getStatus()));
         List<ParticipantDTO> participantDTOS = db.query("SELECT * FROM `participant` WHERE bxid=:bxid",
                 ImmutableMap.of("bxid", dto.getBxid()), PARTICIPANT_ROW_MAPPER);
         if (participantDTOS.size() == 1) {
@@ -193,6 +193,9 @@ public class TransactionCoordinatorImpl implements TransactionCoordinator {
         THREAD_POOL.submit(() -> {
             try {
                 for (ParticipantDTO participantDTO : participantDTOS) {
+                    if (participantDTO.getStatus() != TransactionStatus.TRY_SUCCESS.toInt()) {
+                        break;
+                    }
                     RpcRequest request = new RpcRequest();
                     transactionDTO.setParticipantDTOS(Collections.singletonList(participantDTO));
                     request.setClzName("ResourceManager");

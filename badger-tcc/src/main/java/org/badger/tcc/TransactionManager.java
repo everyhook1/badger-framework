@@ -65,7 +65,11 @@ public class TransactionManager {
         transaction.addParticipant(participant);
         transaction.setCurrentParticipant(participant);
         transaction.setCompensableEnum(compensableEnum);
-        transactionCoordinator.update(new TransactionDTO(transaction));
+        if (context.getRoles().equals(TransactionRoles.LEADER)) {
+            transactionCoordinator.update(new TransactionDTO(transaction));
+        } else {
+            transactionCoordinator.update(new ParticipantDTO(participant));
+        }
         return transaction;
     }
 
