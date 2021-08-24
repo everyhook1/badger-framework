@@ -118,7 +118,7 @@ public class TransactionCoordinatorImpl implements TransactionCoordinator {
             if (dto.getVersion() < old.getVersion()) {
                 return;
             } else {
-                db.update("UPDATE `participant` SET `status`=:status , version=version+1 WHERE bxid=`bxid`", getSource(dto));
+                db.update("UPDATE `participant` SET `status`=:status , version=version+1 WHERE bxid=:bxid", getSource(dto));
             }
         } else if (participantDTOS.size() == 0) {
             db.update("INSERT INTO  `participant` SET " +
@@ -158,6 +158,11 @@ public class TransactionCoordinatorImpl implements TransactionCoordinator {
                 ImmutableMap.of("status", status, "gxid", gxid));
     }
 
+    private void participantStatusChange(String bxid, int status) {
+        db.update("update `participant` SET `status` = :status WHERE `bxid`=:bxid",
+                ImmutableMap.of("status", status, "bxid", bxid));
+    }
+
     @Override
     public void commit(String gxid) {
         transactionStatusChange(gxid, TransactionStatus.TRY_SUCCESS.toInt());
@@ -194,7 +199,8 @@ public class TransactionCoordinatorImpl implements TransactionCoordinator {
             try {
                 for (ParticipantDTO participantDTO : participantDTOS) {
                     if (participantDTO.getStatus() != TransactionStatus.TRY_SUCCESS.toInt()) {
-                        break;
+                        participantStatusChange(participantDTO.getBxid(), TransactionStatus.CANCEL_SUCCESS.toInt());
+                        continue;
                     }
                     RpcRequest request = new RpcRequest();
                     transactionDTO.setParticipantDTOS(Collections.singletonList(participantDTO));
