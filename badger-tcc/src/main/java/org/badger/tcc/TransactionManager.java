@@ -6,7 +6,7 @@ import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.reflect.MethodSignature;
 import org.badger.common.api.RpcRequest;
 import org.badger.common.api.SpanContext;
-import org.badger.common.api.transaction.Compensable;
+import org.badger.tcc.entity.Compensable;
 import org.badger.common.api.transaction.TransactionContext;
 import org.badger.common.api.transaction.TransactionRoles;
 import org.badger.tcc.entity.CompensableEnum;

@@ -3,7 +3,7 @@ package org.badger.provider;
 import com.google.common.collect.ImmutableMap;
 import lombok.extern.slf4j.Slf4j;
 import org.badger.common.api.RpcProvider;
-import org.badger.common.api.transaction.Compensable;
+import org.badger.tcc.entity.Compensable;
 import org.badger.example.api.TccProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;

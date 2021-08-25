@@ -4,7 +4,7 @@ package org.badger.tcc.spring;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
-import org.badger.common.api.transaction.Compensable;
+import org.badger.tcc.entity.Compensable;
 import org.badger.tcc.entity.CompensableIdentifier;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.BeansException;

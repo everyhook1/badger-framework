@@ -23,7 +23,7 @@ public class CompensableAspect {
         this.transactionManager = transactionManager;
     }
 
-    @Pointcut("@annotation(org.badger.common.api.transaction.Compensable)")
+    @Pointcut("@annotation(org.badger.tcc.entity.Compensable)")
     public void compensableService() {
 
     }
