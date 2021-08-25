@@ -2,11 +2,13 @@ package org.badger.common.api.transaction;
 
 import lombok.Data;
 
+import java.io.Serializable;
+
 /**
  * @author liubin01
  */
 @Data
-public class TransactionContext {
+public class TransactionContext implements Serializable {
 
     private TransactionXid rootId;
     private TransactionXid branchId;
