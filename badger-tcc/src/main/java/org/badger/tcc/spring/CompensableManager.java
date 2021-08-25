@@ -34,20 +34,24 @@ public class CompensableManager implements InstantiationAwareBeanPostProcessor {
     }
 
     public static boolean equals(Class<?>[] a, Class<?>[] a2) {
-        if (a == a2)
+        if (a == a2) {
             return true;
-        if (a == null || a2 == null)
+        }
+        if (a == null || a2 == null) {
             return false;
+        }
 
         int length = a.length;
-        if (a2.length != length)
+        if (a2.length != length) {
             return false;
+        }
 
         for (int i = 0; i < length; i++) {
             Class<?> o1 = a[i];
             Class<?> o2 = a2[i];
-            if (!(Objects.equals(o1, o2)))
+            if (!(Objects.equals(o1, o2))) {
                 return false;
+            }
         }
         return true;
     }

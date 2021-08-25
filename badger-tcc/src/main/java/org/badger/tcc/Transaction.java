@@ -4,7 +4,6 @@ import lombok.Data;
 import org.badger.common.api.transaction.TransactionXid;
 import org.badger.tcc.entity.CompensableEnum;
 import org.badger.tcc.entity.TransactionStatus;
-import org.springframework.util.CollectionUtils;
 
 import java.util.ArrayList;
 import java.util.List;

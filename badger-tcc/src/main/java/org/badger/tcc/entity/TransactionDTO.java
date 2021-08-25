@@ -9,7 +9,6 @@ import org.badger.tcc.Participant;
 import org.badger.tcc.Transaction;
 import org.springframework.util.CollectionUtils;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;

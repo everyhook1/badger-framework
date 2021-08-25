@@ -42,7 +42,9 @@ public class ServerClientTest {
         nettyServer.start();
         NettyClient nettyClient = NettyClient.getInstance(rpcSerializer);
         nettyClient.connectChannel(serviceName, "localhost", serverPort);
-        while (times-- > 0) sent(nettyClient, serviceName);
+        while (times-- > 0) {
+            sent(nettyClient, serviceName);
+        }
         nettyClient.destroy();
         nettyServer.destroy();
     }

@@ -91,6 +91,8 @@ public class TransactionManager {
                 participant.setParticipantStatus(ParticipantStatus.CANCEL_SUCCESS);
                 transactionCoordinator.update(new ParticipantDTO(participant));
                 break;
+            default:
+                break;
         }
     }
 
@@ -111,6 +113,8 @@ public class TransactionManager {
             case CANCEL:
                 participant.setParticipantStatus(ParticipantStatus.CANCEL_FAILED);
                 transactionCoordinator.update(new ParticipantDTO(participant));
+                break;
+            default:
                 break;
         }
     }

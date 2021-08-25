@@ -2,8 +2,6 @@ package org.badger.tcc.entity;
 
 import lombok.Data;
 
-import java.lang.reflect.Method;
-
 /**
  * @author liubin01
  */
