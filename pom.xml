@@ -26,7 +26,7 @@
         <spring-boot.version>2.6.0</spring-boot.version>
         <hessian.version>4.0.65</hessian.version>
         <fst.version>2.57</fst.version>
-        <commons-io.version>2.10.0</commons-io.version>
+        <commons-io.version>2.11.0</commons-io.version>
         <curator.version>5.1.0</curator.version>
         <mysql.version>8.0.27</mysql.version>
         <aspectj.version>1.9.7</aspectj.version>
