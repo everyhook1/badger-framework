@@ -12,7 +12,7 @@ public enum TransactionStatus {
     CANCEL_SUCCESS(8),
     CANCEL_FAILED(9),
     ;
-    int value;
+    final int value;
 
     TransactionStatus(int value) {
         this.value = value;

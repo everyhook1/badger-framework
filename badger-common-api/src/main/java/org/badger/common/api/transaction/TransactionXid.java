@@ -10,9 +10,9 @@ import java.util.UUID;
  */
 public class TransactionXid implements Xid, Serializable {
 
-    private int formatId = 1;
-    private byte[] globalTransactionId;
-    private byte[] branchQualifier;
+    private final int formatId = 1;
+    private final byte[] globalTransactionId;
+    private final byte[] branchQualifier;
 
     public TransactionXid(String gid, String bid) {
         globalTransactionId = gid.getBytes();
