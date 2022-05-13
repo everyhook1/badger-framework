@@ -24,7 +24,7 @@
         <spring.version>5.3.19</spring.version>
         <log4j.verion>2.14.1</log4j.verion>
         <spring-boot.version>2.6.7</spring-boot.version>
-        <hessian.version>4.0.65</hessian.version>
+        <hessian.version>4.0.66</hessian.version>
         <fst.version>2.57</fst.version>
         <commons-io.version>2.11.0</commons-io.version>
         <curator.version>5.2.1</curator.version>
