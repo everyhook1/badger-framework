@@ -16,18 +16,18 @@
 
 
         <junit.version>4.13.1</junit.version>
-        <netty.version>4.1.78.Final</netty.version>
+        <netty.version>4.1.79.Final</netty.version>
         <lombok.version>1.18.24</lombok.version>
         <commons-lang3.version>3.12.0</commons-lang3.version>
         <logback.version>1.2.11</logback.version>
         <kryo.version>4.0.2</kryo.version>
-        <spring.version>5.3.21</spring.version>
+        <spring.version>5.3.22</spring.version>
         <log4j.verion>2.14.1</log4j.verion>
         <spring-boot.version>2.7.1</spring-boot.version>
         <hessian.version>4.0.66</hessian.version>
         <fst.version>2.57</fst.version>
         <commons-io.version>2.11.0</commons-io.version>
-        <curator.version>5.2.1</curator.version>
+        <curator.version>5.3.0</curator.version>
         <mysql.version>8.0.30</mysql.version>
         <aspectj.version>1.9.9.1</aspectj.version>
         <log4j.version>2.17.1</log4j.version>
