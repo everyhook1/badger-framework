@@ -29,7 +29,7 @@
         <commons-io.version>2.11.0</commons-io.version>
         <curator.version>5.4.0</curator.version>
         <mysql.version>8.0.31</mysql.version>
-        <aspectj.version>1.9.9.1</aspectj.version>
+        <aspectj.version>1.9.19</aspectj.version>
         <log4j.version>2.17.1</log4j.version>
         <jackson.version>2.14.1</jackson.version>
     </properties>
