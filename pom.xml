@@ -27,7 +27,7 @@
         <hessian.version>4.0.66</hessian.version>
         <fst.version>2.57</fst.version>
         <commons-io.version>2.11.0</commons-io.version>
-        <curator.version>5.4.0</curator.version>
+        <curator.version>5.6.0</curator.version>
         <mysql.version>8.0.32</mysql.version>
         <aspectj.version>1.9.19</aspectj.version>
         <log4j.version>2.17.1</log4j.version>
